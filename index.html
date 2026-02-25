@@ -6,9 +6,12 @@
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
 <style>
 body{margin:0;background:#000;color:#fff;font-family:-apple-system,sans-serif;overflow:hidden}
+/* パスワード画面：最初はこれだけが見える */
 #g{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
 #g input{background:#222;border:1px solid #444;color:#fff;padding:12px;border-radius:8px;font-size:20px;text-align:center;outline:none;width:200px;-webkit-appearance:none}
+/* メインコンテンツ：最初は隠しておく */
 #a-p{display:none}
+/* UI Styles */
 #zoom-bar{position:fixed;top:0;width:100%;height:60px;background:#333;display:flex;align-items:center;padding:0 15px;gap:10px;z-index:100;box-sizing:border-box}
 .file-select-btn{cursor:pointer;background:#ddd;color:#000;padding:8px 12px;border-radius:6px;font-size:13px;font-weight:bold;border:none}
 .zoom-btn{width:40px;height:40px;border-radius:50%;border:none;background:#ddd;color:#000;font-size:18px;flex-shrink:0}
@@ -25,6 +28,7 @@ body{margin:0;background:#000;color:#fff;font-family:-apple-system,sans-serif;ov
 </head>
 <body>
 <div id="g"><div style="margin-bottom:15px;font-size:14px;color:#888;letter-spacing:1px">ENTER ACCESS CODE</div><input type="password" id="p" placeholder="••••" autofocus></div>
+
 <div id="a-p">
 <div id="zoom-bar">
 <label for="f-p" class="file-select-btn">PDF選択</label><input type="file" id="f-p" accept="application/pdf" style="display:none">
@@ -39,21 +43,67 @@ body{margin:0;background:#000;color:#fff;font-family:-apple-system,sans-serif;ov
 <button id="p-b" class="round-btn">▶</button>
 <div id="track-info"><input type="range" id="s-b" min="0" max="100" value="0"></div>
 </div></div></div>
+
 <script>
-(function(){const _k="Mmt3",_v=s=>btoa(s).split('').reverse().join(''),_i=document.getElementById('p'),_g=document.getElementById('g'),_m=document.getElementById('a-p');
-_i.onkeydown=(e)=>{if(e.key==='Enter'){if(_v(_i.value)===_k){_g.style.display='none';_m.style.display='block';_init();}else{_i.value='';_i.placeholder="Invalid";}}};
-function _t(){const d=new Date(),h=String(d.getHours()).padStart(2,'0'),m=String(d.getMinutes()).padStart(2,'0'),c=document.getElementById('clock');if(c)c.textContent=h+":"+m}
-setInterval(_t,1000);_t();
-function _init(){const pdfjsLib=window['pdfjs-dist/build/pdf'];pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
-let doc=null,pn=1,sc=1.0,rent=false;const cvs=document.getElementById('pdf-canvas'),ctx=cvs.getContext('2d');
-const render=async()=>{if(!doc||rent)return;rent=true;const pg=await doc.getPage(pn),dpr=window.devicePixelRatio||1,vp=pg.getViewport({scale:sc*dpr});cvs.width=vp.width;cvs.height=vp.height;cvs.style.width=(vp.width/dpr)+'px';cvs.style.height=(vp.height/dpr)+'px';await pg.render({canvasContext:ctx,viewport:vp}).promise;rent=false;document.getElementById('page-num').textContent=pn+"/"+doc.numPages;};
-document.getElementById('f-p').onchange=(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async function(){const d=new Uint8Array(this.result);doc=await pdfjsLib.getDocument({data:d}).promise;pn=1;render();};r.readAsArrayBuffer(f);};
-document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};document.getElementById('z-s').oninput=(e)=>{sc=e.target.value/100;render()};
-const au=new Audio(),pb=document.getElementById('p-b'),fa=document.getElementById('f-a'),sb=document.getElementById('s-b');
-fa.onchange=(e)=>{const f=e.target.files[0];if(!f)return;au.src=URL.createObjectURL(f);au.load();};
-pb.onclick=()=>{if(!au.src)return;if(au.paused){au.play().catch(()=>{});pb.textContent="||"}else{au.pause();pb.textContent="▶"}};
-au.ontimeupdate=()=>{if(au.duration)sb.value=(au.currentTime/au.duration)*100};
-sb.oninput=(e)=>{if(au.duration)au.currentTime=(e.target.value/100)*au.duration};}})();
+(function(){
+  // パスワードkw2の暗号化キー
+  const _k="Mmt3"; 
+  const _v=s=>btoa(s).split('').reverse().join('');
+  const _i=document.getElementById('p'),_g=document.getElementById('g'),_m=document.getElementById('a-p');
+
+  // パスワード判定処理
+  _i.onkeydown=(e)=>{
+    if(e.key==='Enter'){
+      // 入力された値を逆転Base64で比較
+      if(_v(_i.value)===_k){
+        _g.style.display='none'; // ロック画面を消す
+        _m.style.display='block'; // メイン画面を出す
+        _init(); // PDFと時計の機能を起動
+      }else{
+        _i.value='';
+        _i.placeholder="Invalid";
+      }
+    }
+  };
+
+  // 時計機能
+  function _t(){
+    const d=new Date(),h=String(d.getHours()).padStart(2,'0'),m=String(d.getMinutes()).padStart(2,'0'),c=document.getElementById('clock');
+    if(c)c.textContent=h+":"+m
+  }
+  setInterval(_t,1000);_t();
+
+  // PDF・プレイヤー初期化
+  function _init(){
+    const pdfjsLib=window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.worker.min.js';
+    let doc=null,pn=1,sc=1.0,rent=false;
+    const cvs=document.getElementById('pdf-canvas'),ctx=cvs.getContext('2d');
+    const render=async()=>{
+      if(!doc||rent)return;rent=true;
+      const pg=await doc.getPage(pn),dpr=window.devicePixelRatio||1,vp=pg.getViewport({scale:sc*dpr});
+      cvs.width=vp.width;cvs.height=vp.height;
+      cvs.style.width=(vp.width/dpr)+'px';cvs.style.height=(vp.height/dpr)+'px';
+      await pg.render({canvasContext:ctx,viewport:vp}).promise;rent=false;
+      document.getElementById('page-num').textContent=pn+"/"+doc.numPages;
+    };
+    document.getElementById('f-p').onchange=(e)=>{
+      const f=e.target.files[0];if(!f)return;
+      const r=new FileReader();r.onload=async function(){
+        const d=new Uint8Array(this.result);
+        doc=await pdfjsLib.getDocument({data:d}).promise;pn=1;render();
+      };r.readAsArrayBuffer(f);
+    };
+    document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
+    document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
+    document.getElementById('z-s').oninput=(e)=>{sc=e.target.value/100;render()};
+    const au=new Audio(),pb=document.getElementById('p-b'),fa=document.getElementById('f-a'),sb=document.getElementById('s-b');
+    fa.onchange=(e)=>{const f=e.target.files[0];if(!f)return;au.src=URL.createObjectURL(f);au.load();};
+    pb.onclick=()=>{if(!au.src)return;if(au.paused){au.play().catch(()=>{});pb.textContent="||"}else{au.pause();pb.textContent="▶"}};
+    au.ontimeupdate=()=>{if(au.duration)sb.value=(au.currentTime/au.duration)*100};
+    sb.oninput=(e)=>{if(au.duration)au.currentTime=(e.target.value/100)*au.duration};
+  }
+})();
 </script>
 </body>
 </html>
