@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kei.works ViewTune v1.3</title>
+<title>Kei.works ViewTune v1.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
@@ -24,12 +24,12 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 #digital-clock { font-size: 1.6rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; }
 
 .round-btn { width: 30px; height: 30px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.btn-row { display: flex; justify-content: center; gap: 20px; width: 100%; margin: 8px 0; }
+.btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 8px 0; }
 .file-select-btn { cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 100%; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; margin-bottom: 5px; display: block; }
 .info-label { font-size: 9px; color: #888; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ②ページ数フォントサイズを小型化 */
-#page-num { font-size: 10px; color: #777; margin: 2px 0; }
+/* ①ページ数表示のスタイル調整 */
+#page-num { font-size: 10px; color: #777; min-width: 45px; text-align: center; }
 
 .mode-switch { width: 100%; display: flex; background: #333; border-radius: 15px; margin-top: 5px; padding: 2px; }
 .mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 5px 0; cursor: pointer; border-radius: 13px; }
@@ -39,8 +39,9 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 #pdf-canvas { position: absolute; top: 0; left: 0; display: block; transform-origin: 0 0; transition: transform 0.05s linear; will-change: transform; }
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; }
 
-/* ③音楽再生時間用 */
-#time-text { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 5px; }
+/* ②再生ボタンと秒数を横並びにするためのコンテナ */
+.audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; }
+#time-text { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -55,8 +56,11 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
     <label for="f-p" class="file-select-btn">PDF選択</label>
     <input type="file" id="f-p" accept="application/pdf" style="display:none">
     <div id="pdf-name" class="info-label">PDF未選択</div>
-    <div class="btn-row"><button id="b-p" class="round-btn">←</button><button id="n-pg" class="round-btn">→</button></div>
-    <div id="page-num">0 / 0</div>
+    <div class="btn-row">
+      <button id="b-p" class="round-btn">←</button>
+      <div id="page-num">0 / 0</div>
+      <button id="n-pg" class="round-btn">→</button>
+    </div>
     
     <div class="mode-switch">
       <button id="m-fix" class="mode-btn active">FIX</button>
@@ -67,8 +71,10 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
     <label for="f-a" class="file-select-btn">曲選択</label>
     <input type="file" id="f-a" accept="audio/*" style="display:none">
     <div id="audio-name" class="info-label">曲未選択</div>
-    <button id="p-b" class="round-btn" style="margin-top:5px;">▶</button>
-    <div id="time-text">0:00 / 0:00</div>
+    <div class="audio-row">
+      <button id="p-b" class="round-btn">▶</button>
+      <div id="time-text">0:00/0:00</div>
+    </div>
     
     <div class="c-text">©Kei.works</div>
   </aside>
@@ -171,14 +177,13 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
   fa.onchange=(e)=>{ if(e.target.files[0]) { au.src=URL.createObjectURL(e.target.files[0]); document.getElementById('audio-name').textContent=e.target.files[0].name; } };
   pb.onclick=()=>{ if(au.src){ if(au.paused){ au.play(); pb.textContent="||"; } else { au.pause(); pb.textContent="▶"; } } };
   
-  // ③再生時間の表示更新ロジック
   au.ontimeupdate=()=>{
     const fmt = (t) => {
       if(!t || isNaN(t)) return "0:00";
       const m=Math.floor(t/60), s=Math.floor(t%60);
       return m + ":" + s.toString().padStart(2,'0');
     };
-    timeDisplay.textContent = fmt(au.currentTime) + " / " + fmt(au.duration);
+    timeDisplay.textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
   };
 })();
 </script>
