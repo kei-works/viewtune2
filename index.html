@@ -6,7 +6,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-/* iOS/Android共通：標準動作を抑制 */
+/* 基本動作 */
 body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; touch-action: none; position: fixed; width: 100%; height: 100%; }
 
 /* 起動画面 */
@@ -18,20 +18,20 @@ body { margin: 0; background: #000; color: #fff; font-family: -apple-system, san
 .splash-logo { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 100; letter-spacing: 12px; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 
-.main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; } /* 読み込みまで隠す */
+.main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; }
 aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-right: 1px solid #333; display: flex; flex-direction: column; align-items: center; padding: 15px 10px; box-sizing: border-box; overflow-y: auto; z-index: 100; -webkit-overflow-scrolling: touch; }
 .sep { width: 100%; border-bottom: 1px solid #333; margin: 12px 0; }
 
 #clock-cvs { width: 120px; height: 120px; }
 
-/* ★デジタル時計のサイズのみ変更（標準の太さ） */
+/* デジタル時計のサイズ調整（太字解除） */
 #digital-clock { 
   font-size: 1.6rem; 
   font-weight: normal; 
   margin: 5px 0; 
+  font-variant-numeric: tabular-nums; 
   width: 100%; 
   text-align: center; 
-  font-variant-numeric: tabular-nums; 
   letter-spacing: -1px;
 }
 
@@ -49,4 +49,30 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 </head>
 <body>
 
-<div
+<div id="splash"><div class="splash-logo">Kei.works</div></div>
+
+<div class="main-wrapper" id="main-content">
+  <aside>
+    <canvas id="clock-cvs"></canvas>
+    <div id="digital-clock">00:00:00</div>
+    <div class="sep"></div>
+    <label for="f-p" class="file-select-btn">PDF選択</label>
+    <input type="file" id="f-p" accept="application/pdf" style="display:none">
+    <div id="pdf-name" class="info-label">PDF未選択</div>
+    <div class="btn-row"><button id="b-p" class="round-btn">←</button><button id="n-pg" class="round-btn">→</button></div>
+    <div id="page-num">0 / 0</div>
+    <input type="range" id="z-s" class="slider" min="50" max="300" value="100">
+    <div style="font-size: 9px; color: #555;">ZOOM</div>
+    <div class="sep"></div>
+    <label for="f-a" class="file-select-btn">曲選択</label>
+    <input type="file" id="f-a" accept="audio/*" style="display:none">
+    <div id="audio-name" class="info-label">曲未選択</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+      <button id="p-b" class="round-btn">▶</button>
+      <div id="time-text" style="font-size: 11px; font-weight:600;">0:00</div>
+    </div>
+    <input type="range" id="s-b" class="slider" min="0" max="100" value="0">
+    <div class="c-text">©Kei.works</div>
+  </aside>
+  <main id="pdf-container"><canvas id="pdf-canvas"></canvas></main>
+</div>
