@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kei.works ViewTune v1.2-</title>
+<title>Kei.works ViewTune v1.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
@@ -30,23 +30,13 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 .slider { -webkit-appearance: none; width: 100%; height: 6px; background: #444; border-radius: 3px; outline: none; margin: 15px 0; }
 .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: #fff; border-radius: 50%; }
 
-#pdf-container { 
-  flex: 1; 
-  overflow: hidden; 
-  background: #111; 
-  position: relative; 
-}
+/* 配置切替スイッチ用 */
+.mode-switch { width: 100%; display: flex; background: #333; border-radius: 15px; margin-top: 5px; padding: 2px; }
+.mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 5px 0; cursor: pointer; border-radius: 13px; }
+.mode-btn.active { background: #fff; color: #000; }
 
-/* ★ここを修正：絶対に左上に固定されるように指定 */
-#pdf-canvas { 
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: block; 
-  transform-origin: 0 0;
-  transition: transform 0.05s linear;
-  will-change: transform;
-}
+#pdf-container { flex: 1; overflow: hidden; background: #111; position: relative; }
+#pdf-canvas { position: absolute; top: 0; left: 0; display: block; transform-origin: 0 0; transition: transform 0.05s linear; will-change: transform; }
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; }
 </style>
 </head>
@@ -66,6 +56,12 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
     <div id="page-num">0 / 0</div>
     <input type="range" id="z-s" class="slider" min="50" max="300" value="100">
     <div style="font-size: 9px; color: #555;">ZOOM</div>
+    
+    <div class="mode-switch">
+      <button id="m-fix" class="mode-btn active">FIX</button>
+      <button id="m-free" class="mode-btn">FREE</button>
+    </div>
+
     <div class="sep"></div>
     <label for="f-a" class="file-select-btn">曲選択</label>
     <input type="file" id="f-a" accept="audio/*" style="display:none">
@@ -106,7 +102,7 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 
   function updateSliderFill(el){ const val=(el.value-el.min)/(el.max-el.min)*100; el.style.background=`linear-gradient(to right, #fff ${val}%, #444 ${val}%)`; }
 
-  let doc=null, pn=1, sc=1.0, rent=false;
+  let doc=null, pn=1, sc=1.0, rent=false, isFreeMode=false;
   const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d'), container=document.getElementById('pdf-container');
 
   async function render(){
@@ -122,6 +118,11 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
     rent=false; document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
   }
 
+  // モード切替
+  const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
+  btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); container.style.overflow='hidden'; container.scrollLeft=0; container.scrollTop=0; };
+  btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); container.style.overflow='auto'; };
+
   try {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -134,11 +135,13 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
     };
   } catch(e) {}
 
-  let initialDist = null, initialScale = 1;
+  let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
   container.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       initialScale = sc;
+    } else if (e.touches.length === 1 && isFreeMode) {
+      isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
     }
   }, { passive: false });
 
@@ -150,15 +153,19 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
       cvs.style.transform = `scale(${newScale / sc})`;
       document.getElementById('z-s').value = newScale * 100;
       updateSliderFill(document.getElementById('z-s'));
+    } else if (e.touches.length === 1 && isMoving && isFreeMode) {
+      container.scrollLeft += (lastX - e.touches[0].pageX);
+      container.scrollTop += (lastY - e.touches[0].pageY);
+      lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
     }
   }, { passive: false });
 
   container.addEventListener('touchend', (e) => {
     if (initialDist !== null && e.touches.length < 2) {
       sc = parseFloat(document.getElementById('z-s').value) / 100;
-      initialDist = null;
-      render();
+      initialDist = null; render();
     }
+    isMoving = false;
   });
 
   document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
@@ -176,4 +183,3 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 </script>
 </body>
 </html>
-
