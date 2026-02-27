@@ -2,14 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kei.works ViewTune v6.2</title>
+<title>Kei.works ViewTune v6.2-Smooth</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-/* iOS/Android共通：標準動作を抑制 */
 body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; touch-action: none; position: fixed; width: 100%; height: 100%; }
 
-/* 起動画面 */
 #splash { 
   position: fixed; inset: 0; background: #000; z-index: 9999; 
   display: flex; justify-content: center; align-items: center; 
@@ -18,20 +16,12 @@ body { margin: 0; background: #000; color: #fff; font-family: -apple-system, san
 .splash-logo { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 100; letter-spacing: 12px; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 
-.main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; } /* 読み込みまで隠す */
+.main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; } 
 aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-right: 1px solid #333; display: flex; flex-direction: column; align-items: center; padding: 15px 10px; box-sizing: border-box; overflow-y: auto; z-index: 100; -webkit-overflow-scrolling: touch; }
 .sep { width: 100%; border-bottom: 1px solid #333; margin: 12px 0; }
 
 #clock-cvs { width: 120px; height: 120px; }
-/* ★デジタル時計のサイズ変更のみ実行 */
-#digital-clock { 
-  font-size: 1.6rem; 
-  font-weight: normal; 
-  margin: 5px 0; 
-  font-variant-numeric: tabular-nums; 
-  width: 100%; 
-  text-align: center;
-}
+#digital-clock { font-size: 1.6rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; }
 
 .round-btn { width: 30px; height: 30px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .btn-row { display: flex; justify-content: center; gap: 20px; width: 100%; margin: 8px 0; }
@@ -40,8 +30,22 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 .slider { -webkit-appearance: none; width: 100%; height: 6px; background: #444; border-radius: 3px; outline: none; margin: 15px 0; }
 .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; background: #fff; border-radius: 50%; }
 
-#pdf-container { flex: 1; overflow: auto; background: #111; position: relative; touch-action: none; }
-#pdf-canvas { display: block; transform-origin: 0 0; }
+/* PDF表示エリア：スクロールを徹底的に禁止 */
+#pdf-container { 
+  flex: 1; 
+  overflow: hidden; 
+  background: #111; 
+  position: relative; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+/* キャンバス自体をCSSで拡大縮小させる */
+#pdf-canvas { 
+  display: block; 
+  transition: transform 0.05s linear; /* ズーム中の滑らかさ */
+  will-change: transform;
+}
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; }
 </style>
 </head>
@@ -77,49 +81,43 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
 
 <script>
 (function(){
-  // --- 元の安定した解除ロジック ---
   const splash = document.getElementById('splash');
   const main = document.getElementById('main-content');
-  
-  function unlock() {
-    splash.style.opacity = '0';
-    main.style.visibility = 'visible';
-    setTimeout(() => { splash.style.display = 'none'; }, 1000);
-  }
+  let unlocked = false;
+  function unlock() { if(!unlocked){ unlocked=true; splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 1000); } }
+  window.addEventListener('load', () => setTimeout(unlock, 1500));
+  setTimeout(unlock, 3000);
 
-  window.addEventListener('load', () => { setTimeout(unlock, 1500); });
-  setTimeout(unlock, 3000); 
-
-  // --- 時計 ---
   function updateClock(){
     try {
-      const d=new Date(); 
-      document.getElementById('digital-clock').textContent = d.toTimeString().split(' ')[0];
-      const canvas = document.getElementById('clock-cvs'); 
-      const ctx = canvas.getContext('2d');
-      canvas.width = 240; canvas.height = 240; ctx.translate(120,120);
+      const d=new Date(); document.getElementById('digital-clock').textContent=d.toTimeString().split(' ')[0];
+      const canvas=document.getElementById('clock-cvs'), ctx=canvas.getContext('2d');
+      canvas.width=240; canvas.height=240; ctx.translate(120,120);
       ctx.beginPath(); ctx.arc(0,0,110,0,Math.PI*2); ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
       ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-      for(let i=1; i<=12; i++){ const angle = (i * 30 - 90) * (Math.PI / 180); ctx.fillText(i, Math.cos(angle)*88, Math.sin(angle)*88); }
+      for(let i=1; i<=12; i++){ const a=(i*30-90)*(Math.PI/180); ctx.fillText(i, Math.cos(a)*88, Math.sin(a)*88); }
       const h=(d.getHours()%12+d.getMinutes()/60)*30, m=(d.getMinutes()+d.getSeconds()/60)*6, s=d.getSeconds()*6;
       drawHand(ctx,h,60,6,'#fff'); drawHand(ctx,m,85,4,'#fff'); drawHand(ctx,s,95,2,'#ff3b30');
-    } catch(e) {}
+    } catch(e){}
   }
   function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
   setInterval(updateClock, 1000); updateClock();
 
-  function updateSliderFill(el){ const val = (el.value - el.min) / (el.max - el.min) * 100; el.style.background = `linear-gradient(to right, #fff ${val}%, #444 ${val}%)`; }
+  function updateSliderFill(el){ const val=(el.value-el.min)/(el.max-el.min)*100; el.style.background=`linear-gradient(to right, #fff ${val}%, #444 ${val}%)`; }
 
-  // --- PDF ---
-  let doc=null, pn=1, sc=1.0, rent=false;
-  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d'), container = document.getElementById('pdf-container');
+  let doc=null, pn=1, sc=1.0, currentCssScale=1.0, rent=false;
+  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d'), container=document.getElementById('pdf-container');
 
   async function render(){
     if(!doc || rent) return; rent=true;
     try {
-      const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1; const vp=pg.getViewport({scale:sc*dpr});
+      const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
+      const vp=pg.getViewport({scale:sc*dpr});
       cvs.width=vp.width; cvs.height=vp.height;
       cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
+      // 描画後はCSSスケールを1に戻す（清書されたので）
+      currentCssScale = 1.0;
+      cvs.style.transform = `scale(1)`;
       await pg.render({canvasContext:ctx, viewport:vp}).promise;
     } catch(e){}
     rent=false; document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
@@ -128,41 +126,48 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
   try {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    
     document.getElementById('f-p').onchange=(e)=>{
       const f=e.target.files[0]; if(!f) return;
-      document.getElementById('pdf-name').textContent = f.name;
+      document.getElementById('pdf-name').textContent=f.name;
       const r=new FileReader(); r.onload=async function(){ 
-        try {
-          doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; pn=1; render(); 
-        } catch(err) { alert("PDF読み込み失敗"); }
+        doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; pn=1; render(); 
       }; r.readAsArrayBuffer(f);
     };
-  } catch(e) {}
+  } catch(e){}
 
-  let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
+  // --- ヌルヌル・ズーム・ロジック（スクロール無し固定） ---
+  let initialDist = null, initialScale = 1;
   container.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       initialScale = sc;
-    } else if (e.touches.length === 1) {
-      isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
     }
   }, { passive: false });
 
   container.addEventListener('touchmove', (e) => {
-    e.preventDefault(); 
     if (e.touches.length === 2 && initialDist !== null) {
+      e.preventDefault();
       const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      sc = Math.min(Math.max(initialScale * (dist / initialDist), 0.5), 4.0);
-      document.getElementById('z-s').value = sc * 100; updateSliderFill(document.getElementById('z-s')); render();
-    } else if (e.touches.length === 1 && isMoving) {
-      container.scrollLeft += (lastX - e.touches[0].pageX); container.scrollTop += (lastY - e.touches[0].pageY);
-      lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+      const newScale = Math.min(Math.max(initialScale * (dist / initialDist), 0.5), 4.0);
+      
+      // ここがポイント：描画せず、CSSで見た目だけ変える（ヌルヌル！）
+      currentCssScale = newScale / sc;
+      cvs.style.transform = `scale(${currentCssScale})`;
+      
+      // スライダーの見た目だけ更新
+      document.getElementById('z-s').value = newScale * 100;
+      updateSliderFill(document.getElementById('z-s'));
     }
   }, { passive: false });
 
-  container.addEventListener('touchend', () => { initialDist = null; isMoving = false; });
+  container.addEventListener('touchend', (e) => {
+    if (initialDist !== null && e.touches.length < 2) {
+      // 指を離した瞬間に、現在のスケールを確定させて清書（render）する
+      sc = parseFloat(document.getElementById('z-s').value) / 100;
+      initialDist = null;
+      render();
+    }
+  });
 
   document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
   document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
@@ -175,7 +180,6 @@ aside { width: 150px; min-width: 150px; height: 100vh; background: #111; border-
   pb.onclick=()=>{ if(au.src){ if(au.paused){ au.play(); pb.textContent="||"; } else { au.pause(); pb.textContent="▶"; } } };
   au.ontimeupdate=()=>{ if(au.duration){ sb.value=(au.currentTime/au.duration)*100; updateSliderFill(sb); const c=Math.floor(au.currentTime); document.getElementById('time-text').textContent=Math.floor(c/60)+":"+(c%60).toString().padStart(2,'0'); } };
   sb.oninput=(e)=>{ if(au.duration){ au.currentTime=(e.target.value/100)*au.duration; updateSliderFill(e.target); } };
-  updateSliderFill(sb);
 })();
 </script>
 </body>
