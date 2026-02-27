@@ -2,18 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Kei.works ViewTune v5.5</title>
+<title>Kei.works ViewTune v5.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.16.105/build/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-/* --- 全体：標準フォント --- */
+/* --- 基本設定（標準フォント） --- */
 body {
   margin: 0; background: #000; color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden;
 }
 
-/* --- 起動画面：Montserrat --- */
+/* --- 昨日の起動画面 --- */
 #splash {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: #000; z-index: 2000;
@@ -27,8 +27,8 @@ body {
 }
 @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
 
+/* --- サイドバーレイアウト --- */
 .main-wrapper { display: flex; width: 100vw; height: 100vh; }
-
 aside {
   width: 150px; min-width: 150px; height: 100vh;
   background: #111; border-right: 1px solid #333;
@@ -36,28 +36,169 @@ aside {
   padding: 15px 10px; box-sizing: border-box; z-index: 100;
   overflow-y: auto;
 }
-
 .sep { width: 100%; border-bottom: 1px solid #333; margin: 12px 0; }
 
 /* 時計 */
-#clock-cvs { width: 115px; height: 115px; margin-bottom: 5px; }
+#clock-cvs { width: 120px; height: 120px; margin-bottom: 5px; }
 #digital-clock { font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; font-variant-numeric: tabular-nums; }
 
-/* ボタン：30pxの丸 */
+/* 丸ボタン（30px） */
 .round-btn {
   width: 30px; height: 30px; border-radius: 50%; 
   background: #ddd; color: #000; border: none; 
   font-size: 14px; font-weight: 700; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
 }
 .btn-row { display: flex; justify-content: center; gap: 20px; width: 100%; margin: 8px 0; }
 
 .file-select-btn {
   cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 100%;
-  border-radius: 6px; font-size: 11px; font-weight: 700; border: none;
-  text-align: center; display: block; margin-bottom: 5px;
+  border-radius: 6px; font-size: 11px; font-weight: 700; border: none; text-align: center; margin-bottom: 5px;
 }
-
 .info-label { font-size: 9px; color: #888; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px;}
-#page-num { font-size: 13px;
+#page-num { font-size: 13px; font-weight: 700; margin: 5px 0; }
+.slider { width: 100%; height: 25px; accent-color: #fff; cursor: pointer; }
+
+/* プレイヤー部 */
+.play-row { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 5px; }
+
+/* PDF表示エリア */
+#pdf-container { flex: 1; overflow: auto; background: #111; display: flex; justify-content: flex-start; align-items: flex-start; }
+#pdf-canvas { display: block; }
+
+.c-text { font-size: 9px; font-weight: 600; color: #444; margin-top: auto; padding-top: 15px;}
+</style>
+</head>
+<body>
+
+<div id="splash"><div class="splash-logo">Kei.works</div></div>
+
+<div class="main-wrapper">
+  <aside>
+    <canvas id="clock-cvs"></canvas>
+    <div id="digital-clock">00:00</div>
+    <div class="sep"></div>
+    
+    <label for="f-p" class="file-select-btn">PDF選択</label>
+    <input type="file" id="f-p" accept="application/pdf" style="display:none">
+    <div id="pdf-name" class="info-label">PDF未選択</div>
+    <div class="btn-row">
+      <button id="b-p" class="round-btn">←</button>
+      <button id="n-pg" class="round-btn">→</button>
+    </div>
+    <div id="page-num">0 / 0</div>
+    <input type="range" id="z-s" class="slider" min="50" max="300" value="100">
+    <div style="font-size: 9px; color: #555;">ZOOM</div>
+
+    <div class="sep"></div>
+
+    <label for="f-a" class="file-select-btn">曲選択</label>
+    <input type="file" id="f-a" accept="audio/*" style="display:none">
+    <div id="audio-name" class="info-label">曲未選択</div>
+    <div class="play-row">
+      <button id="p-b" class="round-btn">▶</button>
+      <div id="time-text" style="font-size: 11px; font-weight:600;">0:00</div>
+    </div>
+    <input type="range" id="s-b" class="slider" min="0" max="100" value="0">
+    <div class="c-text">©Kei.works</div>
+  </aside>
+
+  <main id="pdf-container">
+    <canvas id="pdf-canvas"></canvas>
+  </main>
+</div>
+
+<script>
+(function(){
+  // 1. スプラッシュ
+  const hideSplash = () => {
+    const s = document.getElementById('splash');
+    if (s) { s.style.opacity = '0'; setTimeout(() => s.style.display = 'none', 1000); }
+  };
+  window.onload = () => setTimeout(hideSplash, 2000);
+  setTimeout(hideSplash, 3000); // 念のためのバックアップ
+
+  // 2. 時計 (1-12数字入り)
+  function updateClock(){
+    const d=new Date();
+    document.getElementById('digital-clock').textContent = String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0');
+    const canvas = document.getElementById('clock-cvs');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 240; canvas.height = 240;
+    ctx.clearRect(0,0,240,240); ctx.translate(120,120);
+    ctx.beginPath(); ctx.arc(0,0,110,0,Math.PI*2); ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 18px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(let i=1; i<=12; i++){
+      const angle = (i * 30 - 90) * (Math.PI / 180);
+      ctx.fillText(i, Math.cos(angle)*88, Math.sin(angle)*88);
+    }
+    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=(d.getMinutes()+d.getSeconds()/60)*6, s=d.getSeconds()*6;
+    drawHand(ctx, h, 60, 6, '#fff'); drawHand(ctx, m, 85, 4, '#fff'); drawHand(ctx, s, 95, 2, '#ff3b30');
+  }
+  function drawHand(ctx, deg, len, w, col) {
+    ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,-len);
+    ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore();
+  }
+  setInterval(updateClock, 1000); updateClock();
+
+  // 3. PDFロジック (エラー耐性強化)
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  
+  let doc=null, pn=1, sc=1.0, rent=false;
+  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
+
+  async function render(){
+    if(!doc || rent) return;
+    rent=true;
+    try {
+      const pg=await doc.getPage(pn);
+      const dpr=window.devicePixelRatio||1;
+      const vp=pg.getViewport({scale:sc*dpr});
+      cvs.width=vp.width; cvs.height=vp.height;
+      cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
+      await pg.render({canvasContext:ctx, viewport:vp}).promise;
+    } catch(e) { console.error("Render Error:", e); }
+    rent=false;
+    document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
+  }
+
+  document.getElementById('f-p').onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    document.getElementById('pdf-name').textContent = f.name;
+    const r=new FileReader(); r.onload=async function(){
+      try {
+        const d=new Uint8Array(this.result);
+        doc=await pdfjsLib.getDocument({data:d}).promise; pn=1; render();
+      } catch(err) { alert("PDF読み込み失敗"); }
+    }; r.readAsArrayBuffer(f);
+  };
+
+  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
+  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
+  document.getElementById('z-s').oninput=(e)=>{sc=e.target.value/100;render()};
+
+  // 4. オーディオ
+  const au=new Audio(), pb=document.getElementById('p-b'), fa=document.getElementById('f-a'), sb=document.getElementById('s-b');
+  fa.onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    document.getElementById('audio-name').textContent = f.name;
+    au.src=URL.createObjectURL(f); au.load();
+  };
+  pb.onclick=()=>{
+    if(!au.src) return;
+    if(au.paused){ au.play(); pb.textContent="||"; }
+    else { au.pause(); pb.textContent="▶"; }
+  };
+  au.ontimeupdate=()=>{ 
+    if(au.duration) {
+      sb.value=(au.currentTime/au.duration)*100;
+      const c=Math.floor(au.currentTime);
+      document.getElementById('time-text').textContent = Math.floor(c/60)+":"+(c%60).toString().padStart(2,'0');
+    }
+  };
+  sb.oninput=(e)=>{ if(au.duration) au.currentTime=(e.target.value/100)*au.duration; };
+})();
+</script>
+</body>
+</html>
