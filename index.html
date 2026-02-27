@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kei.works ViewTune v3.7</title>
+    <title>Kei.works ViewTune v3.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -46,14 +46,22 @@
         .section-separator { width: 100%; border-bottom: 1px solid var(--border-color); margin: 15px 0; }
         .logo-small { font-family: 'Montserrat', sans-serif; font-size: 0.8rem; letter-spacing: 0.2rem; opacity: 0.5; margin-bottom: 10px; }
 
-        /* 時計 */
+        /* 1. 時計 */
         .clocks { display: flex; flex-direction: column; align-items: center; gap: 8px; }
         #analog-clock { width: 130px; height: 130px; }
         #digital-clock { font-size: 1.4rem; font-family: "SF Mono", monospace; font-variant-numeric: tabular-nums; font-weight: 300; }
 
-        /* PDF・音声コントロール */
-        .pdf-controls, .audio-controls { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        /* 2. PDF操作 */
+        .pdf-controls { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .page-btns { display: flex; justify-content: center; gap: 20px; width: 100%; }
+        .page-btn {
+            background: #222; border: 1px solid #555; color: #fff;
+            padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 1.5rem;
+            flex: 1; display: flex; justify-content: center; align-items: center;
+        }
 
+        /* 3. 音楽プレイヤー */
+        .audio-controls { width: 100%; display: flex; flex-direction: column; gap: 12px; align-items: center; }
         .audio-player-ui { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
         .audio-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         #play-btn {
@@ -67,14 +75,14 @@
         input[type="file"] { display: none; }
         .custom-file-upload {
             width: 90%; text-align: center; padding: 10px 0; border: 1px solid #555;
-            border-radius: 8px; cursor: pointer; font-size: 0.8rem; background: #1a1a1a; transition: 0.3s;
+            border-radius: 8px; cursor: pointer; font-size: 0.8rem; background: #1a1a1a;
         }
-        .custom-file-upload:hover { background: #333; }
 
-        /* メインエリア */
-        main { flex: 1; background: #000; position: relative; overflow: hidden; }
-        #pdf-viewer { width: 100%; height: 100%; border: none; background: #000; }
-        #placeholder-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #444; pointer-events: none; }
+        /* メメイン表示（瞬間切り替え用設定） */
+        main { flex: 1; background: #000; overflow-y: scroll; position: relative; }
+        main::-webkit-scrollbar { display: none; } /* スクロールバーは隠す */
+        #pdf-viewer { width: 100%; height: 100%; border: none; background: #000; display: block; }
+        #placeholder-text { position: fixed; top: 50%; left: 60%; transform: translate(-50%, -50%); color: #444; }
     </style>
 </head>
 <body>
@@ -93,6 +101,10 @@
                 <label class="custom-file-upload">
                     <input type="file" id="pdf-input" accept="application/pdf"> PDFを選択
                 </label>
+                <div class="page-btns">
+                    <button class="page-btn" id="prev-page">＜</button>
+                    <button class="page-btn" id="next-page">＞</button>
+                </div>
             </div>
             <div class="section-separator"></div>
             <div class="audio-controls">
@@ -110,8 +122,8 @@
             </div>
         </aside>
 
-        <main id="pdf-container">
-            <iframe id="pdf-viewer" src="" allow="autoplay"></iframe>
+        <main id="scroll-container">
+            <iframe id="pdf-viewer" src="" style="height: 10000px;"></iframe>
             <div id="placeholder-text">PDFを読み込んでください</div>
         </main>
     </div>
@@ -125,13 +137,12 @@
             }, 2000);
         });
 
-        // 時計
+        // 時計描画
         function updateClocks() {
             const now = new Date();
             document.getElementById('digital-clock').textContent = now.toTimeString().split(' ')[0];
             drawAnalogClock(now);
         }
-
         function drawAnalogClock(now) {
             const canvas = document.getElementById('analog-clock');
             const ctx = canvas.getContext('2d');
@@ -139,23 +150,10 @@
             const radius = 130;
             ctx.clearRect(0, 0, 260, 260);
             ctx.translate(radius, radius);
-            
-            // 外円（ベゼル）
-            ctx.beginPath();
-            ctx.arc(0, 0, radius - 8, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#ffffff'; 
-            ctx.lineWidth = 4;
-            ctx.stroke();
-
-            // 目盛り
+            ctx.beginPath(); ctx.arc(0, 0, radius - 8, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4; ctx.stroke();
             ctx.strokeStyle = '#444'; ctx.lineWidth = 2;
-            for (let i = 0; i < 12; i++) { 
-                ctx.rotate(Math.PI / 6); 
-                ctx.beginPath(); 
-                ctx.moveTo(0, -radius + 20); ctx.lineTo(0, -radius + 35); 
-                ctx.stroke(); 
-            }
-            
+            for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, -radius + 20); ctx.lineTo(0, -radius + 35); ctx.stroke(); }
             drawHand(ctx, (now.getHours() % 12 + now.getMinutes()/60) * 30, radius * 0.5, 8, '#fff');
             drawHand(ctx, (now.getMinutes() + now.getSeconds()/60) * 6, radius * 0.8, 5, '#fff');
             drawHand(ctx, now.getSeconds() * 6, radius * 0.92, 2, '#ff3b30');
@@ -167,15 +165,45 @@
         }
         setInterval(updateClocks, 1000); updateClocks();
 
-        // オーディオ
+        // 瞬間ページ送り（1画面分をパッと飛ばす）
+        const scrollContainer = document.getElementById('scroll-container');
+        document.getElementById('next-page').addEventListener('click', () => {
+            scrollContainer.scrollTop += scrollContainer.clientHeight;
+        });
+        document.getElementById('prev-page').addEventListener('click', () => {
+            scrollContainer.scrollTop -= scrollContainer.clientHeight;
+        });
+
+        // プレイヤー
         const player = document.getElementById('audio-player');
         const playBtn = document.getElementById('play-btn');
         const seekSlider = document.getElementById('seek-slider');
         const timeDisplay = document.getElementById('time-display');
-
         playBtn.addEventListener('click', () => {
             if (player.paused) { player.play(); playBtn.textContent = 'Ⅱ'; }
             else { player.pause(); playBtn.textContent = '▶'; }
         });
         player.addEventListener('timeupdate', () => {
-            timeDisplay.textContent = `${formatTime(player.currentTime)} / ${formatTime(player.
+            timeDisplay.textContent = `${formatTime(player.currentTime)} / ${formatTime(player.duration || 0)}`;
+            seekSlider.value = (player.currentTime / player.duration) * 100 || 0;
+        });
+        seekSlider.addEventListener('input', () => { player.currentTime = (seekSlider.value / 100) * player.duration; });
+        function formatTime(s) { return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`; }
+
+        // PDF処理
+        document.getElementById('pdf-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const pdfUrl = URL.createObjectURL(file);
+                // ページ全体が表示されるように FitH を指定
+                document.getElementById('pdf-viewer').src = pdfUrl + "#view=FitH&toolbar=0&navpanes=0";
+                document.getElementById('placeholder-text').style.display = 'none';
+                scrollContainer.scrollTop = 0;
+            }
+        });
+        document.getElementById('audio-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) { player.src = URL.createObjectURL(e.target.files[0]); playBtn.textContent = '▶'; }
+        });
+    </script>
+</body>
+</html>
