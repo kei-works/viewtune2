@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kei.works ViewTune</title>
+    <title>Kei.works ViewTune v3</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #000000;
+            --sidebar-color: #111111;
             --text-color: #ffffff;
-            --accent-color: #ffffff;
+            --accent-red: #ff3b30;
+            --border-color: #333333;
         }
 
         body, html {
@@ -25,14 +27,9 @@
         /* 起動画面 */
         #splash-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             z-index: 9999;
             transition: opacity 1s ease;
         }
@@ -48,62 +45,92 @@
             animation: fadeInUp 1.5s forwards;
         }
 
-        @keyframes fadeInUp {
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
-        /* メインレイアウト */
-        .container {
+        /* メインレイアウト（横並び） */
+        .main-wrapper {
             display: flex;
-            flex-direction: column;
+            width: 100vw;
             height: 100vh;
         }
 
-        /* ヘッダー・時計エリア */
-        header {
-            padding: 10px 20px;
+        /* 左サイドバー */
+        aside {
+            width: 220px;
+            background-color: var(--sidebar-color);
+            border-right: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            background: #111;
-            border-bottom: 1px solid #333;
-        }
-
-        .clock-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* アナログ時計 */
-        #analog-clock {
-            width: 40px;
-            height: 40px;
-        }
-
-        /* デジタル時計 */
-        #digital-clock {
-            font-size: 1.4rem;
-            font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
-            font-variant-numeric: tabular-nums;
-            font-weight: 300;
+            padding: 20px 10px;
+            box-sizing: border-box;
+            gap: 25px;
+            overflow-y: auto;
         }
 
         .logo-small {
             font-family: 'Montserrat', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             letter-spacing: 0.2rem;
-            opacity: 0.6;
+            opacity: 0.5;
+            margin-bottom: 10px;
         }
 
-        /* PDF・コンテンツエリア */
-        .content-area {
-            flex: 1;
+        /* 時計エリア */
+        .clocks {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+        }
+
+        #analog-clock {
+            width: 120px;
+            height: 120px;
+        }
+
+        #digital-clock {
+            font-size: 1.5rem;
+            font-family: "SF Mono", "Menlo", "Monaco", monospace;
+            font-variant-numeric: tabular-nums;
+            font-weight: 300;
+        }
+
+        /* 操作系 */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input[type="file"] { display: none; }
+
+        .custom-file-upload {
+            width: 80%;
+            text-align: center;
+            padding: 10px 0;
+            border: 1px solid #555;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .custom-file-upload:hover { background: #333; }
+
+        audio {
+            width: 100%;
+            margin-top: 10px;
+            filter: invert(100%) hue-rotate(180deg) brightness(1.5); /* 黒背景に馴染ませる */
+        }
+
+        /* 右側メインエリア（PDF） */
+        main {
+            flex: 1;
             position: relative;
+            background: #000;
         }
 
         iframe {
@@ -112,30 +139,12 @@
             border: none;
         }
 
-        /* コントロール（オーディオ） */
-        .controls {
-            padding: 15px;
-            background: #111;
-            display: flex;
-            justify-content: center;
-            border-top: 1px solid #333;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .custom-file-upload {
-            padding: 8px 16px;
-            border: 1px solid #555;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-right: 10px;
-        }
-
-        .custom-file-upload:hover {
-            background: #222;
+        #placeholder-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #444;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -145,92 +154,94 @@
         <div class="splash-logo">Kei.works</div>
     </div>
 
-    <div class="container">
-        <header>
+    <div class="main-wrapper">
+        <aside>
             <div class="logo-small">Kei.works</div>
-            <div class="clock-container">
+            
+            <div class="clocks">
                 <canvas id="analog-clock"></canvas>
                 <div id="digital-clock">00:00:00</div>
             </div>
-        </header>
 
-        <div class="content-area">
+            <div class="controls">
+                <label class="custom-file-upload">
+                    <input type="file" id="pdf-input" accept="application/pdf"> PDFを選択
+                </label>
+                <label class="custom-file-upload">
+                    <input type="file" id="audio-input" accept="audio/*"> 音源を選択
+                </label>
+                <audio id="audio-player" controls></audio>
+            </div>
+        </aside>
+
+        <main>
             <iframe id="pdf-viewer" src=""></iframe>
-            <div id="placeholder-text" style="position:absolute; color:#444;">PDFを読み込んでください</div>
-        </div>
-
-        <div class="controls">
-            <label class="custom-file-upload">
-                <input type="file" id="pdf-input" accept="application/pdf"> PDF選択
-            </label>
-            <label class="custom-file-upload">
-                <input type="file" id="audio-input" accept="audio/*"> 音源選択
-            </label>
-            <audio id="audio-player" controls></audio>
-        </div>
+            <div id="placeholder-text">PDFを読み込んでください</div>
+        </main>
     </div>
 
     <script>
-        // 起動画面の処理
+        // 起動画面
         window.addEventListener('load', () => {
             setTimeout(() => {
                 document.getElementById('splash-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('splash-screen').style.display = 'none';
-                }, 1000);
+                setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1000);
             }, 2000);
         });
 
-        // 時計の更新
+        // 時計
         function updateClocks() {
             const now = new Date();
-            
-            // デジタル時計の更新
             const h = String(now.getHours()).padStart(2, '0');
             const m = String(now.getMinutes()).padStart(2, '0');
             const s = String(now.getSeconds()).padStart(2, '0');
             document.getElementById('digital-clock').textContent = `${h}:${m}:${s}`;
-
-            // アナログ時計の描画
             drawAnalogClock(now);
         }
 
         function drawAnalogClock(now) {
             const canvas = document.getElementById('analog-clock');
             const ctx = canvas.getContext('2d');
-            const radius = canvas.width / 2;
+            const size = 240; // Retina対応のため倍のサイズで描画
+            canvas.width = size;
+            canvas.height = size;
+            const radius = size / 2;
             
-            // サイズ調整（Retinaディスプレイ対応）
-            canvas.width = 80;
-            canvas.height = 80;
-            canvas.style.width = '40px';
-            canvas.style.height = '40px';
-            const scale = 40;
+            ctx.clearRect(0, 0, size, size);
+            ctx.translate(radius, radius);
             
-            ctx.clearRect(0, 0, 80, 80);
-            ctx.translate(scale, scale);
+            // 目盛り（シンプルに）
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 12; i++) {
+                ctx.rotate(Math.PI / 6);
+                ctx.beginPath();
+                ctx.moveTo(0, -radius + 10);
+                ctx.lineTo(0, -radius + 20);
+                ctx.stroke();
+            }
             
             // 外枠
             ctx.beginPath();
-            ctx.arc(0, 0, scale - 2, 0, 2 * Math.PI);
-            ctx.strokeStyle = '#555';
-            ctx.lineWidth = 2;
+            ctx.arc(0, 0, radius - 5, 0, 2 * Math.PI);
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
             ctx.stroke();
 
             const hours = now.getHours();
             const minutes = now.getMinutes();
             const seconds = now.getSeconds();
 
-            // 短針
-            drawHand(ctx, (hours % 12 + minutes/60) * 30, scale * 0.5, 3, '#fff');
-            // 長針
-            drawHand(ctx, (minutes + seconds/60) * 6, scale * 0.7, 2, '#fff');
+            // 時針
+            drawHand(ctx, (hours % 12 + minutes/60) * 30, radius * 0.5, 6, '#fff');
+            // 分針
+            drawHand(ctx, (minutes + seconds/60) * 6, radius * 0.8, 4, '#fff');
             // 秒針
-            drawHand(ctx, seconds * 6, scale * 0.8, 1, '#ff3b30'); // 秒針だけ赤色でアクセント
+            drawHand(ctx, seconds * 6, radius * 0.9, 2, '#ff3b30');
 
-            // 中心点
+            // 中心
             ctx.beginPath();
-            ctx.arc(0, 0, 2, 0, 2 * Math.PI);
+            ctx.arc(0, 0, 4, 0, 2 * Math.PI);
             ctx.fillStyle = '#fff';
             ctx.fill();
         }
@@ -239,7 +250,7 @@
             ctx.save();
             ctx.rotate(deg * Math.PI / 180);
             ctx.beginPath();
-            ctx.moveTo(0, 5); // 少し後ろに突き出す
+            ctx.moveTo(0, 10);
             ctx.lineTo(0, -length);
             ctx.strokeStyle = color;
             ctx.lineWidth = width;
@@ -251,12 +262,11 @@
         setInterval(updateClocks, 1000);
         updateClocks();
 
-        // ファイル読み込み処理
+        // ファイル処理
         document.getElementById('pdf-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const url = URL.createObjectURL(file);
-                document.getElementById('pdf-viewer').src = url;
+                document.getElementById('pdf-viewer').src = URL.createObjectURL(file);
                 document.getElementById('placeholder-text').style.display = 'none';
             }
         });
@@ -264,8 +274,7 @@
         document.getElementById('audio-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                const url = URL.createObjectURL(file);
-                document.getElementById('audio-player').src = url;
+                document.getElementById('audio-player').src = URL.createObjectURL(file);
             }
         });
     </script>
