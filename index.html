@@ -34,18 +34,20 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   width: 16px; height: 80px; 
   background: #222; border: 1px solid #444; border-left: none;
   border-radius: 0 8px 8px 0; cursor: pointer;
-  transition: left 0.3s ease, background 0.2s;
   display: flex; align-items: center; justify-content: center;
+  transition: left 0.3s ease, background 0.2s;
 }
 #toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 #toggle-btn.is-hidden { left: 0 !important; }
 
+/* ★全画面表示用ボタンの重なり順を修正 */
 #fs-btn {
   position: absolute; top: 15px; right: 15px; z-index: 150;
-  width: 36px; height: 36px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  width: 36px; height: 36px; background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3); color: #fff;
   border-radius: 6px; cursor: pointer; backdrop-filter: blur(5px);
   display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
 }
 
 #resizer { width: 14px; cursor: col-resize; background: transparent; z-index: 101; margin-left: -7px; }
@@ -73,12 +75,14 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
 .mode-btn.active { background: #fff; color: #000; }
 
-/* ★左上寄せに戻して安定させる */
 #pdf-container { 
   flex: 1; overflow: auto; background: #111; position: relative;
-  display: block; /* 中央寄せを解除 */
+  display: block;
   -webkit-overflow-scrolling: touch;
 }
+/* 全画面時に黒背景で中央にくるように調整 */
+#pdf-container:fullscreen { display: flex; justify-content: center; align-items: center; background: #000; }
+
 #pdf-canvas { display: block; transform-origin: top left; flex-shrink: 0; margin: 0; }
 
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; text-align: center; width: 100%; }
@@ -138,7 +142,21 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn');
   const fsBtn = document.getElementById('fs-btn');
+  const container = document.getElementById('pdf-container');
   let isResizing = false, currentWidth = 300;
+
+  // 全画面切り替え処理の修正
+  fsBtn.onclick = () => {
+    if (!document.fullscreenElement) {
+      if (container.requestFullscreen) { container.requestFullscreen(); }
+      else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); } // iOS/Safari
+    } else {
+      if (document.exitFullscreen) { document.exitFullscreen(); }
+    }
+  };
+  document.addEventListener('fullscreenchange', () => { 
+    fsBtn.textContent = document.fullscreenElement ? "✖" : "⛶"; 
+  });
 
   toggleBtn.onclick = () => {
     sidebar.classList.toggle('hidden'); resizer.classList.toggle('hidden'); toggleBtn.classList.toggle('is-hidden');
@@ -194,7 +212,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   setInterval(updateClock, 1000); updateClock();
 
   let doc=null, pn=1, sc=1.0, rent=false, isFreeMode=true;
-  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d'), container=document.getElementById('pdf-container');
+  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
   async function render(){
     if(!doc || rent) return; rent=true;
     try {
@@ -224,6 +242,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY, tempNewScale = 1.0;
   container.addEventListener('touchstart', (e) => {
+    if (e.target === fsBtn) return; // ボタン操作時は無視
     if (e.touches.length === 2) { initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); initialScale = sc; }
     else if (e.touches.length === 1 && isFreeMode) { isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY; }
   }, { passive: false });
