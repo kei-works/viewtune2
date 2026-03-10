@@ -40,7 +40,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 #toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 #toggle-btn.is-hidden { left: 0 !important; }
 
-/* ★全画面表示用ボタンの重なり順を修正 */
 #fs-btn {
   position: absolute; top: 15px; right: 15px; z-index: 150;
   width: 36px; height: 36px; background: rgba(255,255,255,0.2);
@@ -76,14 +75,30 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .mode-btn.active { background: #fff; color: #000; }
 
 #pdf-container { 
-  flex: 1; overflow: auto; background: #111; position: relative;
-  display: block;
+  flex: 1; 
+  overflow: auto; 
+  background: #111; 
+  position: relative;
+  /* ★常に左寄せ・上寄せに固定 */
+  display: flex; 
+  justify-content: flex-start; 
+  align-items: flex-start;
   -webkit-overflow-scrolling: touch;
 }
-/* 全画面時に黒背景で中央にくるように調整 */
-#pdf-container:fullscreen { display: flex; justify-content: center; align-items: center; background: #000; }
 
-#pdf-canvas { display: block; transform-origin: top left; flex-shrink: 0; margin: 0; }
+/* ★全画面時も「左上固定」を維持 */
+#pdf-container:fullscreen { 
+  justify-content: flex-start; 
+  align-items: flex-start; 
+  background: #000; 
+}
+
+#pdf-canvas { 
+  display: block; 
+  transform-origin: top left; 
+  flex-shrink: 0; 
+  margin: 0; 
+}
 
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; text-align: center; width: 100%; }
 
@@ -145,11 +160,10 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   const container = document.getElementById('pdf-container');
   let isResizing = false, currentWidth = 300;
 
-  // 全画面切り替え処理の修正
   fsBtn.onclick = () => {
     if (!document.fullscreenElement) {
       if (container.requestFullscreen) { container.requestFullscreen(); }
-      else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); } // iOS/Safari
+      else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); }
     } else {
       if (document.exitFullscreen) { document.exitFullscreen(); }
     }
@@ -242,7 +256,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY, tempNewScale = 1.0;
   container.addEventListener('touchstart', (e) => {
-    if (e.target === fsBtn) return; // ボタン操作時は無視
+    if (e.target === fsBtn) return;
     if (e.touches.length === 2) { initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); initialScale = sc; }
     else if (e.touches.length === 1 && isFreeMode) { isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY; }
   }, { passive: false });
