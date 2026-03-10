@@ -42,11 +42,10 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
 #fs-btn {
   position: absolute; top: 15px; right: 15px; z-index: 150;
-  width: 36px; height: 36px; background: rgba(255,255,255,0.2);
-  border: 1px solid rgba(255,255,255,0.3); color: #fff;
+  width: 36px; height: 36px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); color: #fff;
   border-radius: 6px; cursor: pointer; backdrop-filter: blur(5px);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
 }
 
 #resizer { width: 14px; cursor: col-resize; background: transparent; z-index: 101; margin-left: -7px; }
@@ -54,6 +53,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .sep { width: 100%; border-bottom: 1px solid #444; margin: 15px 0; }
 
 #clock-cvs { width: 90%; height: auto; aspect-ratio: 1/1; max-width: 600px; }
+/* ★デジタル時計を大きく */
 #digital-clock { font-size: 2.2rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; }
 
 .round-btn { 
@@ -66,44 +66,24 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 8px 0; }
 
 .file-select-btn { cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 85%; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; margin: 0 auto 5px; display: block; }
+
+/* ★ファイル名を白く、大きく */
 .info-label { font-size: 12px; color: #fff; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; }
 
+/* ★ページ数を白く、大きく */
 #page-num { font-size: 14px; color: #fff; min-width: 50px; text-align: center; flex-shrink: 0; font-weight: 600; }
 
 .mode-switch { width: 85%; display: flex; background: #333; border-radius: 15px; margin: 5px auto 0; padding: 2px; }
 .mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
 .mode-btn.active { background: #fff; color: #000; }
 
-#pdf-container { 
-  flex: 1; 
-  overflow: auto; 
-  background: #111; 
-  position: relative;
-  /* ★常に左寄せ・上寄せに固定 */
-  display: flex; 
-  justify-content: flex-start; 
-  align-items: flex-start;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ★全画面時も「左上固定」を維持 */
-#pdf-container:fullscreen { 
-  justify-content: flex-start; 
-  align-items: flex-start; 
-  background: #000; 
-}
-
-#pdf-canvas { 
-  display: block; 
-  transform-origin: top left; 
-  flex-shrink: 0; 
-  margin: 0; 
-}
-
+#pdf-container { flex: 1; overflow: auto; background: #111; position: relative; }
+#pdf-canvas { position: absolute; top: 0; left: 0; display: block; transform-origin: 0 0; }
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; text-align: center; width: 100%; }
 
 .audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; }
-#time-text { font-size: 13px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* ★再生時間を白く、大きく */
+#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -157,20 +137,13 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn');
   const fsBtn = document.getElementById('fs-btn');
-  const container = document.getElementById('pdf-container');
   let isResizing = false, currentWidth = 300;
 
   fsBtn.onclick = () => {
-    if (!document.fullscreenElement) {
-      if (container.requestFullscreen) { container.requestFullscreen(); }
-      else if (container.webkitRequestFullscreen) { container.webkitRequestFullscreen(); }
-    } else {
-      if (document.exitFullscreen) { document.exitFullscreen(); }
-    }
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } 
+    else { if (document.exitFullscreen) document.exitFullscreen(); }
   };
-  document.addEventListener('fullscreenchange', () => { 
-    fsBtn.textContent = document.fullscreenElement ? "✖" : "⛶"; 
-  });
+  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? "✖" : "⛶"; });
 
   toggleBtn.onclick = () => {
     sidebar.classList.toggle('hidden'); resizer.classList.toggle('hidden'); toggleBtn.classList.toggle('is-hidden');
@@ -196,12 +169,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   window.addEventListener('mousemove', (e) => doResize(e.clientX));
   window.addEventListener('touchmove', (e) => doResize(e.touches[0].clientX), { passive: false });
-
-  const endResize = () => { 
-    isResizing = false; document.body.style.cursor = 'default';
-    sidebar.style.transition = 'transform 0.3s ease, margin-left 0.3s ease';
-    toggleBtn.style.transition = 'left 0.3s ease, background 0.2s';
-  };
+  const endResize = () => { isResizing = false; document.body.style.cursor = 'default'; sidebar.style.transition = 'transform 0.3s ease, margin-left 0.3s ease'; toggleBtn.style.transition = 'left 0.3s ease, background 0.2s'; };
   window.addEventListener('mouseup', endResize); window.addEventListener('touchend', endResize);
 
   function updateClock(){
@@ -225,18 +193,23 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
   setInterval(updateClock, 1000); updateClock();
 
-  let doc=null, pn=1, sc=1.0, rent=false, isFreeMode=true;
-  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
+  let doc=null, pn=1, sc=1.0, isFreeMode=true;
+  let renderTask = null;
+  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d'), container=document.getElementById('pdf-container');
+  
   async function render(){
-    if(!doc || rent) return; rent=true;
+    if(!doc) return;
+    if(renderTask) { renderTask.cancel(); }
     try {
       const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
       const vp=pg.getViewport({scale:sc*dpr});
       cvs.width=vp.width; cvs.height=vp.height;
       cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
-      await pg.render({canvasContext:ctx, viewport:vp}).promise;
+      renderTask = pg.render({canvasContext:ctx, viewport:vp});
+      await renderTask.promise;
+      renderTask = null;
     } catch(e){}
-    rent=false; document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
+    document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
   }
   const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
   btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); container.style.overflow='hidden'; container.scrollLeft=0; container.scrollTop=0; };
@@ -256,7 +229,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY, tempNewScale = 1.0;
   container.addEventListener('touchstart', (e) => {
-    if (e.target === fsBtn) return;
     if (e.touches.length === 2) { initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY); initialScale = sc; }
     else if (e.touches.length === 1 && isFreeMode) { isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY; }
   }, { passive: false });
@@ -279,11 +251,11 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   const timeDisplay = document.getElementById('time-text');
   fa.onchange=(e)=>{ if(e.target.files[0]) { au.src=URL.createObjectURL(e.target.files[0]); document.getElementById('audio-name').textContent=e.target.files[0].name; } };
   pb.onclick=()=>{ if(au.src){ if(au.paused){ au.play(); pb.textContent="||"; } else { au.pause(); pb.textContent="▶"; } } };
-  au.onended = () => { pb.textContent = "▶"; };
   au.ontimeupdate=()=>{
     const fmt = (t) => { if(!t || isNaN(t)) return "0:00"; const m=Math.floor(t/60), s=Math.floor(t%60); return m + ":" + s.toString().padStart(2,'0'); };
     timeDisplay.textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
   };
+  au.onended=()=>{ pb.textContent="▶"; };
 })();
 </script>
 </body>
