@@ -34,8 +34,8 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   width: 16px; height: 80px; 
   background: #222; border: 1px solid #444; border-left: none;
   border-radius: 0 8px 8px 0; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
   transition: left 0.3s ease, background 0.2s;
+  display: flex; align-items: center; justify-content: center;
 }
 #toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 #toggle-btn.is-hidden { left: 0 !important; }
@@ -73,18 +73,13 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
 .mode-btn.active { background: #fff; color: #000; }
 
-/* ★PDFコンテナ：サイドバーを除いた領域内で中央に寄せる設定 */
+/* ★左上寄せに戻して安定させる */
 #pdf-container { 
-  flex: 1; 
-  overflow: auto; 
-  background: #111; 
-  position: relative;
-  display: flex; 
-  justify-content: center; /* 左右中央 */
-  align-items: center;     /* 上下中央（必要ならflex-startに変更） */
+  flex: 1; overflow: auto; background: #111; position: relative;
+  display: block; /* 中央寄せを解除 */
   -webkit-overflow-scrolling: touch;
 }
-#pdf-canvas { display: block; transform-origin: center center; flex-shrink: 0; }
+#pdf-canvas { display: block; transform-origin: top left; flex-shrink: 0; margin: 0; }
 
 .c-text { font-size: 9px; color: #444; margin-top: auto; padding-top: 15px; text-align: center; width: 100%; }
 
@@ -151,15 +146,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     toggleBtn.style.transition = 'left 0.3s ease, background 0.2s';
     if(sidebar.classList.contains('hidden')) { sidebar.style.marginLeft = `-${currentWidth}px`; } 
     else { sidebar.style.marginLeft = "0"; }
-    
-    // サイドバーが引っ込むアニメーションに合わせてPDFを追従させる
-    let start = null;
-    function animatePDF(timestamp) {
-      if (!start) start = timestamp;
-      render();
-      if (timestamp - start < 350) requestAnimationFrame(animatePDF);
-    }
-    requestAnimationFrame(animatePDF);
   };
 
   resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; });
@@ -173,7 +159,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
       sidebar.style.transition = 'none'; toggleBtn.style.transition = 'none';
       sidebar.style.width = newWidth + 'px'; sidebar.style.minWidth = newWidth + 'px';
       sidebar.style.marginLeft = "0"; toggleBtn.style.left = newWidth + 'px';
-      render(); 
     }
   };
 
@@ -184,7 +169,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     isResizing = false; document.body.style.cursor = 'default';
     sidebar.style.transition = 'transform 0.3s ease, margin-left 0.3s ease';
     toggleBtn.style.transition = 'left 0.3s ease, background 0.2s';
-    render();
   };
   window.addEventListener('mouseup', endResize); window.addEventListener('touchend', endResize);
 
@@ -223,8 +207,8 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     rent=false; document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
   }
   const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
-  btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); container.style.overflow='hidden'; container.scrollLeft=0; container.scrollTop=0; render(); };
-  btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); container.style.overflow='auto'; render(); };
+  btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); container.style.overflow='hidden'; container.scrollLeft=0; container.scrollTop=0; };
+  btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); container.style.overflow='auto'; };
 
   try {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
