@@ -2,74 +2,59 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kei.works ViewTune test2</title>
+<title>Kei.works ViewTune Final-Logic</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
 body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; touch-action: none; position: fixed; width: 100%; height: 100%; }
 
-#splash {
-  position: fixed; inset: 0; background: #000; z-index: 9999; 
-  display: flex; justify-content: center; align-items: center; 
-  transition: opacity 0.8s ease-in-out; pointer-events: none; opacity: 1;
-}
+#splash { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out; pointer-events: none; }
 .splash-logo { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 100; letter-spacing: 12px; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 
 .main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; position: relative; background: #000; overflow: hidden; } 
+.main-wrapper:fullscreen { width: 100vw; height: 100vh; }
 
 aside { 
-  width: 300px; min-width: 150px; max-width: 80vw; height: 100vh; 
-  background: #111; border-right: 1px solid #333; 
-  display: flex; flex-direction: column; align-items: center; 
-  padding: 15px 10px 30px; box-sizing: border-box;
-  overflow-y: auto; overflow-x: hidden; z-index: 1000; -webkit-overflow-scrolling: touch;
-  transition: transform 0.3s ease, margin-left 0.3s ease;
-  flex-shrink: 0;
+  width: 300px; min-width: 150px; max-width: 80vw; height: 100vh; background: #111; border-right: 1px solid #333; 
+  display: flex; flex-direction: column; align-items: center; padding: 15px 10px 30px; box-sizing: border-box;
+  overflow-y: auto; overflow-x: hidden; z-index: 1000; transition: transform 0.3s ease, margin-left 0.3s ease; flex-shrink: 0;
 }
 aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
 #toggle-btn {
-  position: absolute; top: 50%; left: 300px;
-  transform: translateY(-50%); z-index: 9999;
-  width: 20px; height: 80px; 
-  background: #222; border: 1px solid #444; border-left: none;
-  border-radius: 0 8px 8px 0; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: left 0.3s ease, background 0.2s;
-  touch-action: auto;
+  position: absolute; top: 50%; left: 300px; transform: translateY(-50%); z-index: 9999;
+  width: 20px; height: 80px; background: #222; border: 1px solid #444; border-left: none;
+  border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: left 0.3s ease;
 }
-#toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 #toggle-btn.is-hidden { left: 0 !important; }
+#toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 
 #fs-btn {
-  position: absolute; top: 15px; right: 15px; z-index: 150;
-  width: 36px; height: 36px; background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2); color: #fff;
-  border-radius: 6px; cursor: pointer; backdrop-filter: blur(5px);
-  display: flex; align-items: center; justify-content: center;
+  position: absolute; top: 15px; right: 15px; z-index: 150; width: 40px; height: 40px; background: rgba(50,50,50,0.6);
+  border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 8px; cursor: pointer; backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center;
 }
 
 #resizer { width: 14px; cursor: col-resize; background: transparent; z-index: 101; margin-left: -7px; flex-shrink: 0; }
 .sep { width: 100%; border-bottom: 1px solid #444; margin: 15px 0; flex-shrink: 0; }
 #clock-cvs { width: 90%; height: auto; aspect-ratio: 1/1; max-width: 600px; flex-shrink: 0; }
-#digital-clock { font-size: 2.2rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; flex-shrink: 0; }
+#digital-clock { font-size: 2.2rem; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; flex-shrink: 0; }
 
 .round-btn { width: 42px; height: 42px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 8px 0; flex-shrink: 0; }
 .file-select-btn { cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 85%; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; margin: 0 auto 5px; display: block; flex-shrink: 0; }
 .info-label { font-size: 12px; color: #fff; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; flex-shrink: 0; }
-#page-num { font-size: 14px; color: #fff; min-width: 50px; text-align: center; flex-shrink: 0; font-weight: 600; }
+
 .mode-switch { width: 85%; display: flex; background: #333; border-radius: 15px; margin: 5px auto 0; padding: 2px; flex-shrink: 0; }
 .mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
 .mode-btn.active { background: #fff; color: #000; }
-.c-text { font-size: 9px; color: #444; margin: 20px 0 10px; text-align: center; width: 100%; flex-shrink: 0; }
 
-#pdf-container { flex: 1; overflow: hidden; background: #111; position: relative; touch-action: none; }
-#pdf-canvas { position: absolute; top: 50%; left: 50%; display: block; transform-origin: center center; will-change: transform; }
+#pdf-container { flex: 1; background: #111; position: relative; overflow: hidden; touch-action: none; }
+/* ポイント：中心を基準に並行移動させる設定 */
+#pdf-canvas { position: absolute; top: 0; left: 0; display: block; transform-origin: 0 0; will-change: transform; }
 
 .audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; flex-shrink: 0; }
-#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -87,7 +72,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     <div id="pdf-name" class="info-label">PDF未選択</div>
     <div class="btn-row">
       <button id="b-p" class="round-btn">←</button>
-      <div id="page-num">0 / 0</div>
+      <div id="page-num" style="min-width:60px;text-align:center">0 / 0</div>
       <button id="n-pg" class="round-btn">→</button>
     </div>
     <div class="mode-switch">
@@ -103,12 +88,12 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
       <div id="time-text">0:00/0:00</div>
     </div>
     <div class="sep"></div>
-    <div class="c-text">©Kei.works</div>
+    <div style="font-size:9px;color:#444;margin-top:20px;">©Kei.works</div>
   </aside>
 
   <div id="resizer"></div>
   <main id="pdf-container">
-    <button id="fs-btn" title="全画面モード">⛶</button>
+    <button id="fs-btn">⛶</button>
     <canvas id="pdf-canvas"></canvas>
   </main>
 </div>
@@ -116,196 +101,180 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 <script>
 (function(){
   const splash = document.getElementById('splash'), main = document.getElementById('main-content');
-  let unlocked = false;
-  function unlock() { if(!unlocked){ unlocked=true; splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 1000); } }
-  window.addEventListener('load', () => setTimeout(unlock, 1500));
-  setTimeout(unlock, 3000);
+  const unlock = () => { splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 800); };
+  window.addEventListener('load', unlock); setTimeout(unlock, 3000);
 
-  const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn'), container = document.getElementById('pdf-container');
-  let isResizing = false, currentWidth = 300;
+  const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn');
+  const cvs = document.getElementById('pdf-canvas'), container = document.getElementById('pdf-container');
+  let currentWidth = 300, isResizing = false;
 
+  // --- PDF制御変数 ---
+  let doc=null, pn=1;
+  let sc = 1.0, posX = 0, posY = 0; // キャンバスの左上座標
+  let isFreeMode = true;
+
+  function updateTransform() {
+    // 完全にtranslateとscaleで位置を決定
+    cvs.style.transform = `translate(${posX}px, ${posY}px) scale(${sc})`;
+  }
+
+  // --- 全画面 ---
   document.getElementById('fs-btn').onclick = () => {
-    const target = main; 
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) { target.requestFullscreen?.() || target.webkitRequestFullscreen?.(); } 
-    else { document.exitFullscreen?.() || document.webkitExitFullscreen?.(); }
-  };
-
-  toggleBtn.onclick = (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('hidden'); 
-    resizer.classList.toggle('hidden'); 
-    toggleBtn.classList.toggle('is-hidden');
-    sidebar.style.transition = 'transform 0.3s ease, margin-left 0.3s ease';
-    toggleBtn.style.transition = 'left 0.3s ease';
-    if(sidebar.classList.contains('hidden')) { toggleBtn.style.left = "0px"; sidebar.style.marginLeft = `-${currentWidth}px`; } 
-    else { toggleBtn.style.left = currentWidth + "px"; sidebar.style.marginLeft = "0"; }
-    setTimeout(() => { if(isFreeMode) keepInBounds(); }, 310);
-  };
-
-  resizer.addEventListener('mousedown', () => isResizing = true);
-  resizer.addEventListener('touchstart', () => isResizing = true);
-  const doResize = (clientX) => {
-    if (!isResizing || sidebar.classList.contains('hidden')) return;
-    if (clientX >= 150 && clientX < window.innerWidth * 0.8) {
-      currentWidth = clientX;
-      sidebar.style.transition = 'none';
-      toggleBtn.style.transition = 'none';
-      sidebar.style.width = currentWidth + 'px';
-      sidebar.style.minWidth = currentWidth + 'px';
-      toggleBtn.style.left = currentWidth + 'px';
+    const target = main;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (target.requestFullscreen) target.requestFullscreen();
+      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     }
   };
-  window.addEventListener('mousemove', (e) => doResize(e.clientX));
-  window.addEventListener('touchmove', (e) => { if (isResizing) doResize(e.touches[0].clientX); }, { passive: false });
-  window.addEventListener('mouseup', () => { isResizing = false; if(isFreeMode) keepInBounds(); });
-  window.addEventListener('touchend', () => { isResizing = false; if(isFreeMode) keepInBounds(); });
 
-  function updateClock(){
+  const syncFS = () => { updateTransform(); };
+  document.addEventListener('fullscreenchange', syncFS); document.addEventListener('webkitfullscreenchange', syncFS);
+
+  // --- サイドバー制御 ---
+  toggleBtn.onclick = () => {
+    const isH = sidebar.classList.toggle('hidden');
+    toggleBtn.style.left = isH ? "0px" : currentWidth + "px";
+    sidebar.style.marginLeft = isH ? `-${currentWidth}px` : "0";
+    toggleBtn.classList.toggle('is-hidden');
+    // アニメーション完了後に位置を再計算
+    setTimeout(updateTransform, 310);
+  };
+
+  // --- 時計 ---
+  function tick(){
     const d=new Date(); document.getElementById('digital-clock').textContent=d.toTimeString().split(' ')[0];
-    const canvas=document.getElementById('clock-cvs'), ctx=canvas.getContext('2d');
-    canvas.width=600; canvas.height=600; ctx.translate(300,300);
-    ctx.clearRect(-300,-300,600,600);
+    const c=document.getElementById('clock-cvs'), ctx=c.getContext('2d');
+    c.width=600; c.height=600; ctx.translate(300,300);
     ctx.beginPath(); ctx.arc(0,0,280,0,Math.PI*2); ctx.strokeStyle='#fff'; ctx.lineWidth=6; ctx.stroke();
     for(let i=0; i<60; i++){
-      ctx.save(); ctx.rotate(i*6*Math.PI/180); ctx.beginPath();
-      if(i%5===0){ ctx.moveTo(0,-280); ctx.lineTo(0,-250); ctx.lineWidth=6; }
-      else { ctx.moveTo(0,-280); ctx.lineTo(0,-265); ctx.lineWidth=2; }
-      ctx.strokeStyle='#fff'; ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.rotate(i*6*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,-280); ctx.lineTo(0,(i%5===0?-250:-265)); ctx.strokeStyle='#fff'; ctx.lineWidth=(i%5===0?6:2); ctx.stroke(); ctx.restore();
     }
     ctx.fillStyle='#fff'; ctx.font='bold 44px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     for(let i=1; i<=12; i++){ const a=(i*30-90)*(Math.PI/180); ctx.fillText(i, Math.cos(a)*215, Math.sin(a)*215); }
-    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=(d.getMinutes()+d.getSeconds()/60)*6, s=d.getSeconds()*6;
-    drawHand(ctx,h,160,14,'#fff'); drawHand(ctx,m,230,10,'#fff'); drawHand(ctx,s,250,5,'#ff3b30');
+    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=d.getMinutes()*6, s=d.getSeconds()*6;
+    const draw = (deg,len,w,col) => { ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); };
+    draw(h,160,14,'#fff'); draw(m,230,10,'#fff'); draw(s,250,5,'#ff3b30');
   }
-  function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
-  setInterval(updateClock, 1000); updateClock();
+  setInterval(tick, 1000); tick();
 
-  let doc=null, pn=1, sc=1.0, isFreeMode=true, posX = 0, posY = 0, ticking = false;
-  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
-  
+  // --- PDF描画 ---
+  const pdfjs = window['pdfjs-dist/build/pdf'];
+  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
   async function render(){
     if(!doc) return;
-    try {
-      const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
-      const vp=pg.getViewport({scale:sc*dpr});
-      cvs.width=vp.width; cvs.height=vp.height;
-      cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
-      await pg.render({canvasContext:ctx, viewport:vp}).promise;
-      updateTransform();
-    } catch(e){}
-    document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
+    const pg = await doc.getPage(pn);
+    const dpr = window.devicePixelRatio || 1;
+    // PDF自体の解像度を維持するためのViewport（scale:1で描画し、CSSで拡大縮小する）
+    const vp = pg.getViewport({scale: dpr * 1.5}); 
+    cvs.width = vp.width; cvs.height = vp.height;
+    cvs.style.width = (vp.width / dpr) + 'px';
+    cvs.style.height = (vp.height / dpr) + 'px';
+    await pg.render({canvasContext: cvs.getContext('2d'), viewport: vp}).promise;
+    document.getElementById('page-num').textContent = pn + " / " + doc.numPages;
+    updateTransform();
   }
 
-  function updateTransform() {
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(1)`;
-        ticking = false;
-      });
-      ticking = true;
+  document.getElementById('f-p').onchange = (e) => {
+    const f = e.target.files[0]; if(!f) return;
+    document.getElementById('pdf-name').textContent = f.name;
+    const r = new FileReader();
+    r.onload = async function(){
+      doc = await pdfjs.getDocument({data: new Uint8Array(this.result)}).promise;
+      pn = 1; sc = 1.0; posX = 0; posY = 0; render();
+    };
+    r.readAsArrayBuffer(f);
+  };
+
+  // --- タッチ操作（スクロール不使用方式） ---
+  let lastDist = 0, lastTouchX = 0, lastTouchY = 0;
+  let isPinching = false;
+
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      lastDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+    } else if (e.touches.length === 1) {
+      isPinching = false;
+      lastTouchX = e.touches[0].pageX;
+      lastTouchY = e.touches[0].pageY;
     }
-  }
+  }, {passive: false});
 
-  function alignLeft() {
-    if (!doc) return;
-    const canvasWidth = parseFloat(cvs.style.width);
-    // キャンバスの左端をコンテナの左端に合わせる計算
-    posX = canvasWidth / 2;
-    posY = 0;
+  container.addEventListener('touchmove', (e) => {
+    e.preventDefault(); // ブラウザのスクロールを完全に殺す
+
+    if (e.touches.length === 2 && isPinching) {
+      const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      const zoom = dist / lastDist;
+      const newSc = Math.min(Math.max(sc * zoom, 0.2), 6.0);
+      
+      // 指の中心を基準にズームする計算
+      const centerX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+      const centerY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+      const rect = container.getBoundingClientRect();
+      const relX = centerX - rect.left - posX;
+      const relY = centerY - rect.top - posY;
+
+      posX -= relX * (newSc / sc - 1);
+      posY -= relY * (newSc / sc - 1);
+      sc = newSc;
+      lastDist = dist;
+    } else if (e.touches.length === 1 && !isPinching && isFreeMode) {
+      const dx = e.touches[0].pageX - lastTouchX;
+      const dy = e.touches[0].pageY - lastTouchY;
+      posX += dx;
+      posY += dy;
+      lastTouchX = e.touches[0].pageX;
+      lastTouchY = e.touches[0].pageY;
+    }
     updateTransform();
-  }
+  }, {passive: false});
 
-  function keepInBounds() {
-    if (!doc || !isFreeMode) return;
-    const rect = cvs.getBoundingClientRect();
-    const contRect = container.getBoundingClientRect();
-    const margin = 100;
-    let dx = 0, dy = 0;
-    if (rect.left > contRect.right - margin) dx = (contRect.right - margin) - rect.left;
-    if (rect.right < contRect.left + margin) dx = (contRect.left + margin) - rect.right;
-    if (rect.top > contRect.bottom - margin) dy = (contRect.bottom - margin) - rect.top;
-    if (rect.bottom < contRect.top + margin) dy = (contRect.top + margin) - rect.bottom;
-    posX += dx; posY += dy;
-    updateTransform();
-  }
-
+  // --- モード切替 ---
   const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
   btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); };
   btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); };
 
-  const pdfjsLib = window['pdfjs-dist/build/pdf'];
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-  document.getElementById('f-p').onchange=(e)=>{
-    const f=e.target.files[0]; if(!f) return;
-    document.getElementById('pdf-name').textContent=f.name;
-    const r=new FileReader(); r.onload=async function(){ 
-      doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; 
-      pn=1; sc=1.0; 
-      // 読み込み直後に左端合わせを実行
-      setTimeout(alignLeft, 100); 
-      render(); 
-    }; r.readAsArrayBuffer(f);
+  // --- オーディオ（Edge/iOS 対策込） ---
+  const au = new Audio(), pb = document.getElementById('p-b'), fa = document.getElementById('f-a');
+  let audioFile = null;
+
+  fa.onchange = (e) => {
+    if (e.target.files[0]) {
+      audioFile = e.target.files[0];
+      document.getElementById('audio-name').textContent = audioFile.name;
+      if (au.src) URL.revokeObjectURL(au.src);
+      au.src = ""; // リセット
+      pb.textContent = "▶";
+    }
   };
 
-  let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
-  let pivotX = 0, pivotY = 0;
-
-  container.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
-      initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      initialScale = sc;
-      // 2本の指の中心点をピボットに設定
-      pivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-      pivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
-    } else if (e.touches.length === 1 && isFreeMode) {
-      isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+  pb.onclick = () => {
+    if (!audioFile) return;
+    if (!au.src || au.src === "") {
+      au.src = URL.createObjectURL(audioFile);
+      au.load();
     }
-  }, { passive: false });
-
-  container.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (e.touches.length === 2 && initialDist !== null) {
-      const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      const ratio = currentDist / initialDist;
-      const newScale = initialScale * ratio;
-      
-      // 基準点を維持するためのズレ補正 (FIXモードでもズームは指の間で行う)
-      const curPivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-      const curPivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
-      
-      if (isFreeMode) {
-        posX += (curPivotX - pivotX);
-        posY += (curPivotY - pivotY);
-      }
-      pivotX = curPivotX; pivotY = curPivotY;
-
-      cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${ratio})`;
-    } else if (e.touches.length === 1 && isMoving && isFreeMode) {
-      posX += (e.touches[0].pageX - lastX); posY += (e.touches[0].pageY - lastY);
-      lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
-      keepInBounds();
+    if (au.paused) {
+      au.play().then(() => { pb.textContent = "||"; }).catch(() => {
+        setTimeout(() => { au.play(); pb.textContent = "||"; }, 150);
+      });
+    } else {
+      au.pause(); pb.textContent = "▶";
     }
-  }, { passive: false });
-
-  container.addEventListener('touchend', (e) => {
-    if (initialDist !== null && e.touches.length < 2) {
-      const finalDist = Math.hypot(e.changedTouches[0].pageX - (e.touches[0]?.pageX || 0), e.changedTouches[0].pageY - (e.touches[0]?.pageY || 0));
-      sc = Math.min(Math.max(initialScale * (finalDist / initialDist || 1), 0.2), 5.0);
-      initialDist = null; render();
-    }
-    isMoving = false; if(isFreeMode) keepInBounds();
-  });
-
-  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
-  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
-  const au=new Audio(), pb=document.getElementById('p-b'), fa=document.getElementById('f-a');
-  fa.onchange=(e)=>{ if(e.target.files[0]) { au.src=URL.createObjectURL(e.target.files[0]); document.getElementById('audio-name').textContent=e.target.files[0].name; } };
-  pb.onclick=()=>{ if(au.src){ if(au.paused){ au.play(); pb.textContent="||"; } else { au.pause(); pb.textContent="▶"; } } };
-  au.ontimeupdate=()=>{
-    const fmt = (t) => { if(!t || isNaN(t)) return "0:00"; const m=Math.floor(t/60), s=Math.floor(t%60); return m + ":" + s.toString().padStart(2,'0'); };
-    document.getElementById('time-text').textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
   };
-  window.addEventListener('resize', () => { if(isFreeMode) keepInBounds(); });
+
+  au.ontimeupdate = () => {
+    const f=(t)=>{ if(!t||isNaN(t))return "0:00"; const m=Math.floor(t/60),s=Math.floor(t%60); return m+":"+s.toString().padStart(2,'0'); };
+    document.getElementById('time-text').textContent = f(au.currentTime)+"/"+f(au.duration);
+  };
+
+  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render();}};
+  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render();}};
 })();
 </script>
 </body>
