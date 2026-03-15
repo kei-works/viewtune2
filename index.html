@@ -1,16 +1,291 @@
-// container.addEventListener('touchmove', ...) 内の移動ロジックを以下のように調整
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Kei.works ViewTune test2</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; touch-action: none; position: fixed; width: 100%; height: 100%; }
+
+#splash {
+  position: fixed; inset: 0; background: #000; z-index: 9999; 
+  display: flex; justify-content: center; align-items: center; 
+  transition: opacity 0.8s ease-in-out; pointer-events: none; opacity: 1;
+}
+.splash-logo { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 100; letter-spacing: 12px; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+
+.main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; position: relative; background: #000; overflow: hidden; } 
+
+aside { 
+  width: 300px; min-width: 150px; max-width: 80vw; height: 100vh; 
+  background: #111; border-right: 1px solid #333; 
+  display: flex; flex-direction: column; align-items: center; 
+  padding: 15px 10px 30px; box-sizing: border-box;
+  overflow-y: auto; overflow-x: hidden; z-index: 1000; -webkit-overflow-scrolling: touch;
+  transition: transform 0.3s ease, margin-left 0.3s ease;
+  flex-shrink: 0;
+}
+aside.hidden { transform: translateX(-100%); margin-left: -300px; }
+
+#toggle-btn {
+  position: absolute; top: 50%; left: 300px;
+  transform: translateY(-50%); z-index: 9999;
+  width: 20px; height: 80px; 
+  background: #222; border: 1px solid #444; border-left: none;
+  border-radius: 0 8px 8px 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: left 0.3s ease, background 0.2s;
+  touch-action: auto;
+}
+#toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
+#toggle-btn.is-hidden { left: 0 !important; }
+
+#fs-btn {
+  position: absolute; top: 15px; right: 15px; z-index: 150;
+  width: 36px; height: 36px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  border-radius: 6px; cursor: pointer; backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center;
+}
+
+#resizer { width: 14px; cursor: col-resize; background: transparent; z-index: 101; margin-left: -7px; flex-shrink: 0; }
+.sep { width: 100%; border-bottom: 1px solid #444; margin: 15px 0; flex-shrink: 0; }
+#clock-cvs { width: 90%; height: auto; aspect-ratio: 1/1; max-width: 600px; flex-shrink: 0; }
+#digital-clock { font-size: 2.2rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; flex-shrink: 0; }
+
+.round-btn { width: 42px; height: 42px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 18px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 8px 0; flex-shrink: 0; }
+.file-select-btn { cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 85%; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; margin: 0 auto 5px; display: block; flex-shrink: 0; }
+.info-label { font-size: 12px; color: #fff; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; flex-shrink: 0; }
+#page-num { font-size: 14px; color: #fff; min-width: 50px; text-align: center; flex-shrink: 0; font-weight: 600; }
+.mode-switch { width: 85%; display: flex; background: #333; border-radius: 15px; margin: 5px auto 0; padding: 2px; flex-shrink: 0; }
+.mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
+.mode-btn.active { background: #fff; color: #000; }
+.c-text { font-size: 9px; color: #444; margin: 20px 0 10px; text-align: center; width: 100%; flex-shrink: 0; }
+
+#pdf-container { flex: 1; overflow: hidden; background: #111; position: relative; touch-action: none; }
+#pdf-canvas { position: absolute; top: 50%; left: 0; display: block; transform-origin: left center; will-change: transform; }
+
+.audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; flex-shrink: 0; }
+#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div id="splash"><div class="splash-logo">Kei.works</div></div>
+
+<div class="main-wrapper" id="main-content">
+  <button id="toggle-btn"></button>
+  <aside id="sidebar">
+    <canvas id="clock-cvs"></canvas>
+    <div id="digital-clock">00:00:00</div>
+    <div class="sep"></div>
+    <label for="f-p" class="file-select-btn">PDF選択</label>
+    <input type="file" id="f-p" accept="application/pdf" style="display:none">
+    <div id="pdf-name" class="info-label">PDF未選択</div>
+    <div class="btn-row">
+      <button id="b-p" class="round-btn">←</button>
+      <div id="page-num">0 / 0</div>
+      <button id="n-pg" class="round-btn">→</button>
+    </div>
+    <div class="mode-switch">
+      <button id="m-free" class="mode-btn active">FREE</button>
+      <button id="m-fix" class="mode-btn">FIX</button>
+    </div>
+    <div class="sep"></div>
+    <label for="f-a" class="file-select-btn">曲選択</label>
+    <input type="file" id="f-a" accept="audio/*" style="display:none">
+    <div id="audio-name" class="info-label">曲未選択</div>
+    <div class="audio-row">
+      <button id="p-b" class="round-btn">▶</button>
+      <div id="time-text">0:00/0:00</div>
+    </div>
+    <div class="sep"></div>
+    <div class="c-text">©Kei.works</div>
+  </aside>
+
+  <div id="resizer"></div>
+  <main id="pdf-container">
+    <button id="fs-btn" title="全画面モード">⛶</button>
+    <canvas id="pdf-canvas"></canvas>
+  </main>
+</div>
+
+<script>
+(function(){
+  const splash = document.getElementById('splash'), main = document.getElementById('main-content');
+  let unlocked = false;
+  function unlock() { if(!unlocked){ unlocked=true; splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 1000); } }
+  window.addEventListener('load', () => setTimeout(unlock, 1500));
+  setTimeout(unlock, 3000);
+
+  const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn'), container = document.getElementById('pdf-container');
+  let isResizing = false, currentWidth = 300;
+
+  document.getElementById('fs-btn').onclick = () => {
+    const target = main; 
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) { target.requestFullscreen?.() || target.webkitRequestFullscreen?.(); } 
+    else { document.exitFullscreen?.() || document.webkitExitFullscreen?.(); }
+  };
+
+  toggleBtn.onclick = (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('hidden'); 
+    resizer.classList.toggle('hidden'); 
+    toggleBtn.classList.toggle('is-hidden');
+    sidebar.style.transition = 'transform 0.3s ease, margin-left 0.3s ease';
+    toggleBtn.style.transition = 'left 0.3s ease';
+    if(sidebar.classList.contains('hidden')) { toggleBtn.style.left = "0px"; sidebar.style.marginLeft = `-${currentWidth}px`; } 
+    else { toggleBtn.style.left = currentWidth + "px"; sidebar.style.marginLeft = "0"; }
+    setTimeout(() => { if(!isFreeMode) fixToEdge(); else keepInBounds(); }, 310);
+  };
+
+  resizer.addEventListener('mousedown', () => isResizing = true);
+  resizer.addEventListener('touchstart', () => isResizing = true);
+  const doResize = (clientX) => {
+    if (!isResizing || sidebar.classList.contains('hidden')) return;
+    if (clientX >= 150 && clientX < window.innerWidth * 0.8) {
+      currentWidth = clientX;
+      sidebar.style.transition = 'none';
+      toggleBtn.style.transition = 'none';
+      sidebar.style.width = currentWidth + 'px';
+      sidebar.style.minWidth = currentWidth + 'px';
+      toggleBtn.style.left = currentWidth + 'px';
+      if(!isFreeMode) fixToEdge();
+    }
+  };
+  window.addEventListener('mousemove', (e) => doResize(e.clientX));
+  window.addEventListener('touchmove', (e) => { if (isResizing) doResize(e.touches[0].clientX); }, { passive: false });
+  window.addEventListener('mouseup', () => { isResizing = false; if(!isFreeMode) fixToEdge(); else keepInBounds(); });
+  window.addEventListener('touchend', () => { isResizing = false; if(!isFreeMode) fixToEdge(); else keepInBounds(); });
+
+  function updateClock(){
+    const d=new Date(); document.getElementById('digital-clock').textContent=d.toTimeString().split(' ')[0];
+    const canvas=document.getElementById('clock-cvs'), ctx=canvas.getContext('2d');
+    canvas.width=600; canvas.height=600; ctx.translate(300,300);
+    ctx.clearRect(-300,-300,600,600);
+    ctx.beginPath(); ctx.arc(0,0,280,0,Math.PI*2); ctx.strokeStyle='#fff'; ctx.lineWidth=6; ctx.stroke();
+    for(let i=0; i<60; i++){
+      ctx.save(); ctx.rotate(i*6*Math.PI/180); ctx.beginPath();
+      if(i%5===0){ ctx.moveTo(0,-280); ctx.lineTo(0,-250); ctx.lineWidth=6; }
+      else { ctx.moveTo(0,-280); ctx.lineTo(0,-265); ctx.lineWidth=2; }
+      ctx.strokeStyle='#fff'; ctx.stroke(); ctx.restore();
+    }
+    ctx.fillStyle='#fff'; ctx.font='bold 44px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(let i=1; i<=12; i++){ const a=(i*30-90)*(Math.PI/180); ctx.fillText(i, Math.cos(a)*215, Math.sin(a)*215); }
+    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=(d.getMinutes()+d.getSeconds()/60)*6, s=d.getSeconds()*6;
+    drawHand(ctx,h,160,14,'#fff'); drawHand(ctx,m,230,10,'#fff'); drawHand(ctx,s,250,5,'#ff3b30');
+  }
+  function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
+  setInterval(updateClock, 1000); updateClock();
+
+  let doc=null, pn=1, sc=1.0, isFreeMode=true, posX = 0, posY = 0, ticking = false;
+  const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
+  
+  async function render(){
+    if(!doc) return;
+    try {
+      const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
+      const vp=pg.getViewport({scale:sc*dpr});
+      cvs.width=vp.width; cvs.height=vp.height;
+      cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
+      await pg.render({canvasContext:ctx, viewport:vp}).promise;
+      if(!isFreeMode) fixToEdge(); else updateTransform();
+    } catch(e){}
+    document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
+  }
+
+  function updateTransform() {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        cvs.style.transform = `translate(calc(0% + ${posX}px), calc(-50% + ${posY}px)) scale(1)`;
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+
+  function fixToEdge() {
+    if (!doc) return;
+    posX = 0; posY = 0; 
+    updateTransform();
+  }
+
+  function keepInBounds() {
+    if (!doc || !isFreeMode) return;
+    const rect = cvs.getBoundingClientRect();
+    const contRect = container.getBoundingClientRect();
+    const margin = 100;
+    let dx = 0, dy = 0;
+    if (rect.left > contRect.right - margin) dx = (contRect.right - margin) - rect.left;
+    if (rect.right < contRect.left + margin) dx = (contRect.left + margin) - rect.right;
+    if (rect.top > contRect.bottom - margin) dy = (contRect.bottom - margin) - rect.top;
+    if (rect.bottom < contRect.top + margin) dy = (contRect.top + margin) - rect.bottom;
+    posX += dx; posY += dy;
+    updateTransform();
+  }
+
+  const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
+  btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); fixToEdge(); };
+  btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); };
+
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  document.getElementById('f-p').onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    document.getElementById('pdf-name').textContent=f.name;
+    const r=new FileReader(); r.onload=async function(){ 
+      doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; 
+      pn=1; sc=1.0; isFreeMode ? (posX=50, posY=0) : fixToEdge(); render(); 
+    }; r.readAsArrayBuffer(f);
+  };
+
+  let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      initialScale = sc;
+    } else if (e.touches.length === 1 && isFreeMode) {
+      isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+    }
+  }, { passive: false });
 
   container.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (e.touches.length === 2 && initialDist !== null) {
-      // ズームは許可（ヌルサク表示）
       const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       const s = dist / initialDist;
       cvs.style.transform = `translate(calc(0% + ${posX}px), calc(-50% + ${posY}px)) scale(${s})`;
     } else if (e.touches.length === 1 && isMoving && isFreeMode) {
-      // ★ここ！ isFreeMode が true の時だけ posX, posY を更新する
+      // FREEモードの時だけ移動を許可
       posX += (e.touches[0].pageX - lastX); posY += (e.touches[0].pageY - lastY);
       lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
       keepInBounds();
     }
   }, { passive: false });
+
+  container.addEventListener('touchend', (e) => {
+    if (initialDist !== null && e.touches.length < 2) {
+      const dist = Math.hypot(e.changedTouches[0].pageX - (e.touches[0]?.pageX || 0), e.changedTouches[0].pageY - (e.touches[0]?.pageY || 0));
+      sc = Math.min(Math.max(initialScale * (dist / initialDist || 1), 0.2), 5.0);
+      initialDist = null; render();
+    }
+    isMoving = false; if(isFreeMode) keepInBounds(); else fixToEdge();
+  });
+
+  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
+  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
+  const au=new Audio(), pb=document.getElementById('p-b'), fa=document.getElementById('f-a');
+  fa.onchange=(e)=>{ if(e.target.files[0]) { au.src=URL.createObjectURL(e.target.files[0]); document.getElementById('audio-name').textContent=e.target.files[0].name; } };
+  pb.onclick=()=>{ if(au.src){ if(au.paused){ au.play(); pb.textContent="||"; } else { au.pause(); pb.textContent="▶"; } } };
+  au.ontimeupdate=()=>{
+    const fmt = (t) => { if(!t || isNaN(t)) return "0:00"; const m=Math.floor(t/60), s=Math.floor(t%60); return m + ":" + s.toString().padStart(2,'0'); };
+    document.getElementById('time-text').textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
+  };
+  window.addEventListener('resize', () => { if(!isFreeMode) fixToEdge(); else keepInBounds(); });
+})();
+</script>
+</body>
+</html>
