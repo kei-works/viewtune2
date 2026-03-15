@@ -37,7 +37,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   border-radius: 0 8px 8px 0; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: left 0.3s ease, background 0.2s;
-  touch-action: auto;
 }
 #toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
 #toggle-btn.is-hidden { left: 0 !important; }
@@ -66,7 +65,7 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 .c-text { font-size: 9px; color: #444; margin: 20px 0 10px; text-align: center; width: 100%; flex-shrink: 0; }
 
 #pdf-container { flex: 1; overflow: hidden; background: #111; position: relative; touch-action: none; }
-#pdf-canvas { position: absolute; top: 50%; left: 50%; display: block; transform-origin: center center; will-change: transform; }
+#pdf-canvas { position: absolute; transform-origin: 0 0; will-change: transform; }
 
 .audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; flex-shrink: 0; }
 #time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -124,12 +123,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn'), container = document.getElementById('pdf-container');
   let isResizing = false, currentWidth = 300;
 
-  document.getElementById('fs-btn').onclick = () => {
-    const target = main; 
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) { target.requestFullscreen?.() || target.webkitRequestFullscreen?.(); } 
-    else { document.exitFullscreen?.() || document.webkitExitFullscreen?.(); }
-  };
-
   toggleBtn.onclick = (e) => {
     e.stopPropagation();
     sidebar.classList.toggle('hidden'); 
@@ -139,7 +132,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     toggleBtn.style.transition = 'left 0.3s ease';
     if(sidebar.classList.contains('hidden')) { toggleBtn.style.left = "0px"; sidebar.style.marginLeft = `-${currentWidth}px`; } 
     else { toggleBtn.style.left = currentWidth + "px"; sidebar.style.marginLeft = "0"; }
-    setTimeout(() => { if(isFreeMode) keepInBounds(); }, 310);
   };
 
   resizer.addEventListener('mousedown', () => isResizing = true);
@@ -157,8 +149,8 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   };
   window.addEventListener('mousemove', (e) => doResize(e.clientX));
   window.addEventListener('touchmove', (e) => { if (isResizing) doResize(e.touches[0].clientX); }, { passive: false });
-  window.addEventListener('mouseup', () => { isResizing = false; if(isFreeMode) keepInBounds(); });
-  window.addEventListener('touchend', () => { isResizing = false; if(isFreeMode) keepInBounds(); });
+  window.addEventListener('mouseup', () => isResizing = false);
+  window.addEventListener('touchend', () => isResizing = false);
 
   function updateClock(){
     const d=new Date(); document.getElementById('digital-clock').textContent=d.toTimeString().split(' ')[0];
@@ -180,52 +172,29 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
   setInterval(updateClock, 1000); updateClock();
 
-  let doc=null, pn=1, sc=1.0, isFreeMode=true, posX = 0, posY = 0, ticking = false;
+  let doc=null, pn=1, sc=1.0, isFreeMode=true, posX = 0, posY = 0;
   const cvs=document.getElementById('pdf-canvas'), ctx=cvs.getContext('2d');
   
   async function render(){
     if(!doc) return;
-    try {
-      const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
-      const vp=pg.getViewport({scale:sc*dpr});
-      cvs.width=vp.width; cvs.height=vp.height;
-      cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
-      await pg.render({canvasContext:ctx, viewport:vp}).promise;
-      updateTransform();
-    } catch(e){}
+    const pg=await doc.getPage(pn);
+    const dpr=window.devicePixelRatio||1;
+    const vp=pg.getViewport({scale:sc*dpr});
+    cvs.width=vp.width; cvs.height=vp.height;
+    cvs.style.width=(vp.width/dpr)+'px';
+    cvs.style.height=(vp.height/dpr)+'px';
+    await pg.render({canvasContext:ctx, viewport:vp}).promise;
+    updateTransform();
     document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
   }
 
   function updateTransform() {
-    if (!ticking) {
-      window.requestAnimationFrame(() => {
-        cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(1)`;
-        ticking = false;
-      });
-      ticking = true;
-    }
+    cvs.style.transform = `translate(${posX}px, ${posY}px)`;
   }
 
   function alignLeft() {
-    if (!doc) return;
-    const canvasWidth = parseFloat(cvs.style.width);
-    // キャンバスの左端をコンテナの左端に合わせる計算
-    posX = canvasWidth / 2;
-    posY = 0;
-    updateTransform();
-  }
-
-  function keepInBounds() {
-    if (!doc || !isFreeMode) return;
-    const rect = cvs.getBoundingClientRect();
-    const contRect = container.getBoundingClientRect();
-    const margin = 100;
-    let dx = 0, dy = 0;
-    if (rect.left > contRect.right - margin) dx = (contRect.right - margin) - rect.left;
-    if (rect.right < contRect.left + margin) dx = (contRect.left + margin) - rect.right;
-    if (rect.top > contRect.bottom - margin) dy = (contRect.bottom - margin) - rect.top;
-    if (rect.bottom < contRect.top + margin) dy = (contRect.top + margin) - rect.bottom;
-    posX += dx; posY += dy;
+    posX = 0;
+    posY = (container.clientHeight - parseFloat(cvs.style.height)) / 2;
     updateTransform();
   }
 
@@ -240,61 +209,54 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     document.getElementById('pdf-name').textContent=f.name;
     const r=new FileReader(); r.onload=async function(){ 
       doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; 
-      pn=1; sc=1.0; 
-      // 読み込み直後に左端合わせを実行
-      setTimeout(alignLeft, 100); 
-      render(); 
+      pn=1; sc=1.0; await render(); alignLeft();
     }; r.readAsArrayBuffer(f);
   };
 
-  let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
-  let pivotX = 0, pivotY = 0;
+  let startDist=0, startScale=1, startPosX=0, startPosY=0, pivotX=0, pivotY=0, isMoving=false, lastX=0, lastY=0;
 
   container.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
-      initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      initialScale = sc;
-      // 2本の指の中心点をピボットに設定
-      pivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-      pivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+      startDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      startScale = sc;
+      startPosX = posX;
+      startPosY = posY;
+      const rect = container.getBoundingClientRect();
+      pivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2 - rect.left;
+      pivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2 - rect.top;
     } else if (e.touches.length === 1 && isFreeMode) {
-      isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+      isMoving = true;
+      lastX = e.touches[0].pageX;
+      lastY = e.touches[0].pageY;
     }
   }, { passive: false });
 
   container.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    if (e.touches.length === 2 && initialDist !== null) {
+    if (e.touches.length === 2) {
       const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      const ratio = currentDist / initialDist;
-      const newScale = initialScale * ratio;
+      const zoom = currentDist / startDist;
+      const newScale = startScale * zoom;
       
-      // 基準点を維持するためのズレ補正 (FIXモードでもズームは指の間で行う)
-      const curPivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
-      const curPivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+      // 指の間を基準に座標を再計算
+      const dx = (pivotX - startPosX) / startScale;
+      const dy = (pivotY - startPosY) / startScale;
       
-      if (isFreeMode) {
-        posX += (curPivotX - pivotX);
-        posY += (curPivotY - pivotY);
-      }
-      pivotX = curPivotX; pivotY = curPivotY;
-
-      cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${ratio})`;
+      posX = pivotX - dx * newScale;
+      posY = pivotY - dy * newScale;
+      sc = newScale;
+      
+      render(); // 解像度を維持しながら描画
     } else if (e.touches.length === 1 && isMoving && isFreeMode) {
-      posX += (e.touches[0].pageX - lastX); posY += (e.touches[0].pageY - lastY);
-      lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
-      keepInBounds();
+      posX += (e.touches[0].pageX - lastX);
+      posY += (e.touches[0].pageY - lastY);
+      lastX = e.touches[0].pageX;
+      lastY = e.touches[0].pageY;
+      updateTransform();
     }
   }, { passive: false });
 
-  container.addEventListener('touchend', (e) => {
-    if (initialDist !== null && e.touches.length < 2) {
-      const finalDist = Math.hypot(e.changedTouches[0].pageX - (e.touches[0]?.pageX || 0), e.changedTouches[0].pageY - (e.touches[0]?.pageY || 0));
-      sc = Math.min(Math.max(initialScale * (finalDist / initialDist || 1), 0.2), 5.0);
-      initialDist = null; render();
-    }
-    isMoving = false; if(isFreeMode) keepInBounds();
-  });
+  container.addEventListener('touchend', () => { isMoving = false; });
 
   document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
   document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
@@ -305,7 +267,6 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     const fmt = (t) => { if(!t || isNaN(t)) return "0:00"; const m=Math.floor(t/60), s=Math.floor(t%60); return m + ":" + s.toString().padStart(2,'0'); };
     document.getElementById('time-text').textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
   };
-  window.addEventListener('resize', () => { if(isFreeMode) keepInBounds(); });
 })();
 </script>
 </body>
