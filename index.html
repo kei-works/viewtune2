@@ -2,56 +2,71 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Kei.works ViewTune Ultimate</title>
+<title>Kei.works ViewTune test2</title>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-* { touch-action: none; -webkit-user-select: none; box-sizing: border-box; }
+* { touch-action: none; -webkit-user-select: none; }
 body { margin: 0; background: #000; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; position: fixed; width: 100%; height: 100%; }
 
-#splash { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out; pointer-events: none; }
+#splash {
+  position: fixed; inset: 0; background: #000; z-index: 9999; 
+  display: flex; justify-content: center; align-items: center; 
+  transition: opacity 0.8s ease-in-out; pointer-events: none; opacity: 1;
+}
 .splash-logo { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 100; letter-spacing: 12px; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
 
 .main-wrapper { display: flex; width: 100vw; height: 100vh; visibility: hidden; position: relative; background: #000; overflow: hidden; } 
-.main-wrapper:fullscreen { width: 100vw; height: 100vh; }
-.main-wrapper:-webkit-full-screen { width: 100vw; height: 100vh; }
 
 aside { 
-  width: 300px; min-width: 150px; max-width: 80vw; height: 100vh; background: #111; border-right: 1px solid #333; 
-  display: flex; flex-direction: column; align-items: center; padding: 15px 10px 30px; 
-  overflow-y: auto; overflow-x: hidden; z-index: 1000; transition: transform 0.3s ease, margin-left 0.3s ease, width 0.3s ease; flex-shrink: 0; touch-action: pan-y;
+  width: 300px; min-width: 150px; max-width: 80vw; height: 100vh; 
+  background: #111; border-right: 1px solid #333; 
+  display: flex; flex-direction: column; align-items: center; 
+  padding: 15px 10px 30px; box-sizing: border-box; 
+  overflow-y: auto; overflow-x: hidden; z-index: 1000;
+  transition: transform 0.3s ease, margin-left 0.3s ease; flex-shrink: 0;
+  touch-action: pan-y;
 }
 aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
 #toggle-btn {
   position: absolute; top: 50%; left: 300px; transform: translateY(-50%); z-index: 9999;
   width: 20px; height: 80px; background: #222; border: 1px solid #444; border-left: none;
-  border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: left 0.3s ease;
+  border-radius: 0 8px 8px 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: left 0.3s ease;
 }
-#toggle-btn.is-hidden { left: 0 !important; }
 #toggle-btn::after { content: ""; width: 2px; height: 20px; background: #fff; border-radius: 2px; }
+#toggle-btn.is-hidden { left: 0 !important; }
 
 #fs-btn {
-  position: absolute; top: 15px; right: 15px; z-index: 2000; width: 44px; height: 44px; background: rgba(50,50,50,0.6);
-  border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); cursor: pointer; font-size: 20px;
+  position: absolute; top: 15px; right: 15px; z-index: 150;
+  width: 36px; height: 36px; background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
 }
 
 #resizer { width: 14px; cursor: col-resize; background: transparent; z-index: 101; margin-left: -7px; flex-shrink: 0; }
 .sep { width: 100%; border-bottom: 1px solid #444; margin: 15px 0; flex-shrink: 0; }
 #clock-cvs { width: 90%; height: auto; aspect-ratio: 1/1; max-width: 600px; flex-shrink: 0; }
-#digital-clock { font-size: 2.2rem; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; flex-shrink: 0; }
+#digital-clock { font-size: 2.2rem; font-weight: normal; margin: 5px 0; font-variant-numeric: tabular-nums; width: 100%; text-align: center; flex-shrink: 0; }
 
-.round-btn { width: 42px; height: 42px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+.round-btn { width: 42px; height: 42px; border-radius: 50%; background: #ddd; color: #000; border: none; font-size: 18px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .btn-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin: 8px 0; flex-shrink: 0; }
 .file-select-btn { cursor: pointer; background: #ddd; color: #000; padding: 7px 0; width: 85%; border-radius: 6px; font-size: 11px; font-weight: 700; text-align: center; margin: 0 auto 5px; display: block; flex-shrink: 0; }
 .info-label { font-size: 12px; color: #fff; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; flex-shrink: 0; }
+#page-num { font-size: 14px; color: #fff; min-width: 50px; text-align: center; flex-shrink: 0; font-weight: 600; }
+
+.mode-switch { width: 85%; display: flex; background: #333; border-radius: 15px; margin: 5px auto 0; padding: 2px; flex-shrink: 0; }
+.mode-btn { flex: 1; border: none; background: none; color: #888; font-size: 10px; font-weight: 700; padding: 6px 0; cursor: pointer; border-radius: 13px; }
+.mode-btn.active { background: #fff; color: #000; }
+.c-text { font-size: 9px; color: #444; margin: 20px 0 10px; text-align: center; width: 100%; flex-shrink: 0; }
 
 #pdf-container { flex: 1; background: #111; position: relative; overflow: hidden; }
 #pdf-canvas { position: absolute; top: 0; left: 0; display: block; transform-origin: 0 0; }
 
 .audio-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 5px; flex-shrink: 0; }
-#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; }
+#time-text { font-size: 12px; color: #fff; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -69,8 +84,12 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     <div id="pdf-name" class="info-label">PDF未選択</div>
     <div class="btn-row">
       <button id="b-p" class="round-btn">←</button>
-      <div id="page-num" style="min-width:60px;text-align:center">0 / 0</div>
+      <div id="page-num">0 / 0</div>
       <button id="n-pg" class="round-btn">→</button>
+    </div>
+    <div class="mode-switch">
+      <button id="m-free" class="mode-btn active">FREE</button>
+      <button id="m-fix" class="mode-btn">FIX</button>
     </div>
     <div class="sep"></div>
     <label for="f-a" class="file-select-btn">曲選択</label>
@@ -81,12 +100,12 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
       <div id="time-text">0:00/0:00</div>
     </div>
     <div class="sep"></div>
-    <div style="font-size:9px;color:#444;margin-top:20px;">©Kei.works</div>
+    <div class="c-text">©Kei.works</div>
   </aside>
 
   <div id="resizer"></div>
   <main id="pdf-container">
-    <button id="fs-btn">⛶</button>
+    <button id="fs-btn" title="全画面モード">⛶</button>
     <canvas id="pdf-canvas"></canvas>
   </main>
 </div>
@@ -94,132 +113,165 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 <script>
 (function(){
   const splash = document.getElementById('splash'), main = document.getElementById('main-content');
-  const unlock = () => { splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 800); };
-  window.addEventListener('load', unlock); setTimeout(unlock, 3000);
+  let unlocked = false;
+  function unlock() { if(!unlocked){ unlocked=true; splash.style.opacity='0'; main.style.visibility='visible'; setTimeout(()=>splash.style.display='none', 1000); } }
+  window.addEventListener('load', () => setTimeout(unlock, 1500));
+  setTimeout(unlock, 3000);
 
   const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('resizer'), toggleBtn = document.getElementById('toggle-btn');
-  const cvs = document.getElementById('pdf-canvas'), container = document.getElementById('pdf-container');
-  let currentWidth = 300, posX = 0, posY = 0, sc = 1.0;
+  const fsBtn = document.getElementById('fs-btn');
+  const cvs=document.getElementById('pdf-canvas'), container=document.getElementById('pdf-container');
+  let isResizing = false, currentWidth = 300;
+  let posX = 0, posY = 0, sc = 1.0, isFreeMode = true;
 
-  function updateTransform() {
+  function constrainPos() {
     const rect = container.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const cw = (cvs.width / dpr) * sc, ch = (cvs.height / dpr) * sc;
-    if (posX < -cw + 50) posX = -cw + 50;
+    const canvW = (cvs.width / dpr) * sc;
+    const canvH = (cvs.height / dpr) * sc;
+
+    // 左端固定
+    if (posX < 0) posX = 0;
     if (posX > rect.width - 50) posX = rect.width - 50;
-    if (posY < -ch + 50) posY = -ch + 50;
-    if (posY > rect.height - 50) posY = rect.height - 50;
+
+    // 上端スマート固定
+    if (canvH > rect.height) {
+      if (posY > 0) posY = 0;
+      if (posY < rect.height - canvH) posY = rect.height - canvH;
+    } else {
+      posY = 0; // 画面より小さい時は上に吸着
+    }
+  }
+
+  function updateTransform() {
+    constrainPos();
     cvs.style.transform = `translate(${posX}px, ${posY}px) scale(${sc})`;
   }
 
-  document.getElementById('fs-btn').onclick = () => {
-    const target = main;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (target.requestFullscreen) target.requestFullscreen();
-      else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
+  fsBtn.onclick = () => {
+    const target = main; 
+    if (target.requestFullscreen) { if (!document.fullscreenElement) target.requestFullscreen(); else document.exitFullscreen(); } 
+    else if (target.webkitRequestFullscreen) { if (!document.webkitFullscreenElement) target.webkitRequestFullscreen(); else document.webkitExitFullscreen(); }
   };
-
-  const syncFS = () => { document.getElementById('fs-btn').textContent = (document.fullscreenElement||document.webkitFullscreenElement) ? "✖" : "⛶"; setTimeout(updateTransform, 200); };
-  document.addEventListener('fullscreenchange', syncFS); document.addEventListener('webkitfullscreenchange', syncFS);
+  
+  document.addEventListener('fullscreenchange', () => { fsBtn.textContent = document.fullscreenElement ? "✖" : "⛶"; });
+  document.addEventListener('webkitfullscreenchange', () => { fsBtn.textContent = document.webkitFullscreenElement ? "✖" : "⛶"; });
 
   toggleBtn.onclick = () => {
-    const isH = sidebar.classList.toggle('hidden');
-    toggleBtn.style.left = isH ? "0px" : currentWidth + "px";
-    sidebar.style.marginLeft = isH ? `-${currentWidth}px` : "0";
-    toggleBtn.classList.toggle('is-hidden');
-    let s = null;
-    const loop = (t) => { if(!s) s=t; updateTransform(); if(t-s<350) requestAnimationFrame(loop); };
-    requestAnimationFrame(loop);
+    sidebar.classList.toggle('hidden'); resizer.classList.toggle('hidden'); toggleBtn.classList.toggle('is-hidden');
+    if(sidebar.classList.contains('hidden')) { toggleBtn.style.left = "0px"; sidebar.style.marginLeft = `-${currentWidth}px`; } 
+    else { toggleBtn.style.left = currentWidth + "px"; sidebar.style.marginLeft = "0"; }
+    setTimeout(updateTransform, 310);
   };
 
-  // 時計
-  function tick(){
+  resizer.addEventListener('mousedown', () => isResizing = true);
+  resizer.addEventListener('touchstart', () => isResizing = true);
+  window.addEventListener('mousemove', (e) => {
+    if (!isResizing || sidebar.classList.contains('hidden')) return;
+    if (e.clientX >= 150 && e.clientX < window.innerWidth * 0.8) {
+      currentWidth = e.clientX; sidebar.style.width = currentWidth + 'px'; toggleBtn.style.left = currentWidth + 'px';
+      updateTransform();
+    }
+  });
+  window.addEventListener('touchmove', (e) => {
+    if (isResizing) {
+      const x = e.touches[0].clientX;
+      if (x >= 150 && x < window.innerWidth * 0.8) {
+        currentWidth = x; sidebar.style.width = currentWidth + 'px'; toggleBtn.style.left = currentWidth + 'px';
+        updateTransform();
+      }
+    }
+  });
+  window.addEventListener('mouseup', () => isResizing = false);
+  window.addEventListener('touchend', () => isResizing = false);
+
+  function updateClock(){
     const d=new Date(); document.getElementById('digital-clock').textContent=d.toTimeString().split(' ')[0];
-    const c=document.getElementById('clock-cvs'), ctx=c.getContext('2d');
-    c.width=600; c.height=600; ctx.translate(300,300);
+    const canvas=document.getElementById('clock-cvs'), ctx=canvas.getContext('2d');
+    canvas.width=600; canvas.height=600; ctx.translate(300,300);
     ctx.beginPath(); ctx.arc(0,0,280,0,Math.PI*2); ctx.strokeStyle='#fff'; ctx.lineWidth=6; ctx.stroke();
     for(let i=0; i<60; i++){
-      ctx.save(); ctx.rotate(i*6*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,-280); ctx.lineTo(0,(i%5===0?-250:-265)); ctx.strokeStyle='#fff'; ctx.lineWidth=(i%5===0?6:2); ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.rotate(i*6*Math.PI/180); ctx.beginPath();
+      ctx.moveTo(0,-280); ctx.lineTo(0,(i%5===0?-250:-265)); ctx.strokeStyle='#fff'; ctx.lineWidth=(i%5===0?6:2); ctx.stroke(); ctx.restore();
     }
     ctx.fillStyle='#fff'; ctx.font='bold 44px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
     for(let i=1; i<=12; i++){ const a=(i*30-90)*(Math.PI/180); ctx.fillText(i, Math.cos(a)*215, Math.sin(a)*215); }
-    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=d.getMinutes()*6, s=d.getSeconds()*6;
-    const draw = (deg,len,w,col) => { ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); };
-    draw(h,160,14,'#fff'); draw(m,230,10,'#fff'); draw(s,250,5,'#ff3b30');
+    const h=(d.getHours()%12+d.getMinutes()/60)*30, m=(d.getMinutes()+d.getSeconds()/60)*6, s=d.getSeconds()*6;
+    drawHand(ctx,h,160,14,'#fff'); drawHand(ctx,m,230,10,'#fff'); drawHand(ctx,s,250,5,'#ff3b30');
   }
-  setInterval(tick, 1000); tick();
+  function drawHand(ctx,deg,len,w,col){ ctx.save(); ctx.rotate(deg*Math.PI/180); ctx.beginPath(); ctx.moveTo(0,30); ctx.lineTo(0,-len); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.stroke(); ctx.restore(); }
+  setInterval(updateClock, 1000); updateClock();
 
-  // PDF
-  const pdfjs = window['pdfjs-dist/build/pdf'];
-  pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-  let doc=null, pn=1;
-  async function render(){
-    if(!doc) return; const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1, vp=pg.getViewport({scale:dpr});
-    cvs.width=vp.width; cvs.height=vp.height; cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
-    await pg.render({canvasContext:cvs.getContext('2d'), viewport:vp}).promise;
-    document.getElementById('page-num').textContent=pn+" / "+doc.numPages; updateTransform();
-  }
-  document.getElementById('f-p').onchange=(e)=>{
-    const f=e.target.files[0]; if(!f) return; document.getElementById('pdf-name').textContent=f.name;
-    const r=new FileReader(); r.onload=async function(){ doc=await pdfjs.getDocument({data:new Uint8Array(this.result)}).promise; pn=1; render(); }; r.readAsArrayBuffer(f);
-  };
-
-  // オーディオ（最も直接的でシンプルなEdge対応版）
-  const au = new Audio(), pb = document.getElementById('p-b'), fa = document.getElementById('f-a');
+  let doc=null, pn=1, renderTask=null;
+  const ctx2d=cvs.getContext('2d');
   
-  fa.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (au.src) URL.revokeObjectURL(au.src);
-      au.src = URL.createObjectURL(file);
-      document.getElementById('audio-name').textContent = file.name;
-      au.load(); // Edge向け：選択時にパスを確定させる
-      pb.textContent = "▶";
-    }
+  async function render(){
+    if(!doc) return; if(renderTask) renderTask.cancel();
+    const pg=await doc.getPage(pn); const dpr=window.devicePixelRatio||1;
+    const vp=pg.getViewport({scale:dpr});
+    cvs.width=vp.width; cvs.height=vp.height;
+    cvs.style.width=(vp.width/dpr)+'px'; cvs.style.height=(vp.height/dpr)+'px';
+    renderTask = pg.render({canvasContext:ctx2d, viewport:vp});
+    await renderTask.promise; renderTask = null;
+    document.getElementById('page-num').textContent=pn+" / "+doc.numPages;
+    updateTransform();
+  }
+
+  document.getElementById('m-fix').onclick=()=>{ isFreeMode=false; document.getElementById('m-fix').classList.add('active'); document.getElementById('m-free').classList.remove('active'); posX=0; posY=0; sc=1.0; updateTransform(); };
+  document.getElementById('m-free').onclick=()=>{ isFreeMode=true; document.getElementById('m-free').classList.add('active'); document.getElementById('m-fix').classList.remove('active'); };
+
+  const pdfjsLib = window['pdfjs-dist/build/pdf'];
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  document.getElementById('f-p').onchange=(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    document.getElementById('pdf-name').textContent=f.name;
+    const r=new FileReader(); r.onload=async function(){ doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; pn=1; render(); }; r.readAsArrayBuffer(f);
   };
 
-  pb.onclick = () => {
-    if (!au.src) return;
-    if (au.paused) {
-      // 一切の余計な処理を挟まず、クリックイベントから直接play()を実行
-      au.play();
-      pb.textContent = "||";
-    } else {
-      au.pause();
-      pb.textContent = "▶";
-    }
-  };
-
-  au.onended = () => { pb.textContent = "▶"; };
-  au.ontimeupdate = () => {
-    const f=(t)=>{ if(!t||isNaN(t))return "0:00"; const m=Math.floor(t/60),s=Math.floor(t%60); return m+":"+s.toString().padStart(2,'0'); };
-    document.getElementById('time-text').textContent = f(au.currentTime)+"/"+f(au.duration);
-  };
-
-  // 操作
-  let idist=0, isc=1, ip=false, idg=false, lx, ly;
+  let initialDist = 0, initialScale = 1, isPinching = false, isDragging = false, lastX, lastY;
   container.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) { ip=true; idist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX, e.touches[0].pageY-e.touches[1].pageY); isc=sc; }
-    else { idg=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; }
-  }, {passive:false});
+    if (e.touches.length === 2) {
+      isPinching = true; isDragging = false;
+      initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      initialScale = sc;
+    } else if (e.touches.length === 1 && isFreeMode) {
+      isDragging = true; lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+    }
+  }, { passive: false });
+
   container.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    if(ip && e.touches.length === 2) {
-      const d=Math.hypot(e.touches[0].pageX-e.touches[1].pageX, e.touches[0].pageY-e.touches[1].pageY);
-      sc=Math.min(Math.max(isc*(d/idist), 0.2), 5.0);
-    } else if(idg) {
-      posX += (e.touches[0].clientX - lx); posY += (e.touches[0].clientY - ly);
-      lx=e.touches[0].clientX; ly=e.touches[0].clientY;
+    if (isPinching && e.touches.length === 2) {
+      const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      const newScale = Math.min(Math.max(initialScale * (dist / initialDist), 0.2), 5.0);
+      const rect = container.getBoundingClientRect();
+      const midX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      const midY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+      const ratio = newScale / sc;
+      posX = midX - (midX - posX) * ratio;
+      posY = midY - (midY - posY) * ratio;
+      sc = newScale;
+      // ピンチ中は制限を少し緩やかにするか、updateTransform内で吸収
+      updateTransform();
+    } else if (isDragging && e.touches.length === 1) {
+      posX += (e.touches[0].clientX - lastX);
+      posY += (e.touches[0].clientY - lastY);
+      lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+      updateTransform();
     }
-    updateTransform();
-  }, {passive:false});
-  container.addEventListener('touchend', () => { ip=idg=false; });
-  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render();}};
-  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render();}};
+  }, { passive: false });
+
+  container.addEventListener('touchend', () => { isPinching = false; isDragging = false; });
+  document.getElementById('b-p').onclick=()=>{if(doc&&pn>1){pn--;render()}};
+  document.getElementById('n-pg').onclick=()=>{if(doc&&pn<doc.numPages){pn++;render()}};
+
+  const au=new Audio(), pb=document.getElementById('p-b'), fa=document.getElementById('f-a');
+  fa.onchange=(e)=>{ if(e.target.files[0]) { au.src=URL.createObjectURL(e.target.files[0]); document.getElementById('audio-name').textContent=e.target.files[0].name; } };
+  pb.onclick=()=>{ if(au.src){ if(au.paused) au.play(); else au.pause(); pb.textContent = au.paused ? "▶" : "||"; } };
+  au.ontimeupdate=()=>{
+    const fmt = (t) => { if(!t || isNaN(t)) return "0:00"; const m=Math.floor(t/60), s=Math.floor(t%60); return m + ":" + s.toString().padStart(2,'0'); };
+    document.getElementById('time-text').textContent = fmt(au.currentTime) + "/" + fmt(au.duration);
+  };
 })();
 </script>
 </body>
