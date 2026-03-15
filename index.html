@@ -206,6 +206,15 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     }
   }
 
+  function alignLeft() {
+    if (!doc) return;
+    const canvasWidth = parseFloat(cvs.style.width);
+    // キャンバスの左端をコンテナの左端に合わせる計算
+    posX = canvasWidth / 2;
+    posY = 0;
+    updateTransform();
+  }
+
   function keepInBounds() {
     if (!doc || !isFreeMode) return;
     const rect = cvs.getBoundingClientRect();
@@ -221,18 +230,8 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   }
 
   const btnFix = document.getElementById('m-fix'), btnFree = document.getElementById('m-free');
-  btnFix.onclick = () => { 
-    isFreeMode=false; 
-    btnFix.classList.add('active'); 
-    btnFree.classList.remove('active'); 
-    // 現在の位置で固定（posX/posYをそのまま維持）
-    updateTransform();
-  };
-  btnFree.onclick = () => { 
-    isFreeMode=true; 
-    btnFree.classList.add('active'); 
-    btnFix.classList.remove('active'); 
-  };
+  btnFix.onclick = () => { isFreeMode=false; btnFix.classList.add('active'); btnFree.classList.remove('active'); };
+  btnFree.onclick = () => { isFreeMode=true; btnFree.classList.add('active'); btnFix.classList.remove('active'); };
 
   const pdfjsLib = window['pdfjs-dist/build/pdf'];
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -241,15 +240,23 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
     document.getElementById('pdf-name').textContent=f.name;
     const r=new FileReader(); r.onload=async function(){ 
       doc=await pdfjsLib.getDocument({data:new Uint8Array(this.result)}).promise; 
-      pn=1; sc=1.0; posX=0; posY=0; render(); 
+      pn=1; sc=1.0; 
+      // 読み込み直後に左端合わせを実行
+      setTimeout(alignLeft, 100); 
+      render(); 
     }; r.readAsArrayBuffer(f);
   };
 
   let initialDist = null, initialScale = 1, isMoving = false, lastX, lastY;
+  let pivotX = 0, pivotY = 0;
+
   container.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       initialDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
       initialScale = sc;
+      // 2本の指の中心点をピボットに設定
+      pivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+      pivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
     } else if (e.touches.length === 1 && isFreeMode) {
       isMoving = true; lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
     }
@@ -258,10 +265,21 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
   container.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (e.touches.length === 2 && initialDist !== null) {
-      const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-      const s = dist / initialDist;
-      // 基準点をcenterに戻したので指の間で自然に拡大
-      cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${s})`;
+      const currentDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+      const ratio = currentDist / initialDist;
+      const newScale = initialScale * ratio;
+      
+      // 基準点を維持するためのズレ補正 (FIXモードでもズームは指の間で行う)
+      const curPivotX = (e.touches[0].pageX + e.touches[1].pageX) / 2;
+      const curPivotY = (e.touches[0].pageY + e.touches[1].pageY) / 2;
+      
+      if (isFreeMode) {
+        posX += (curPivotX - pivotX);
+        posY += (curPivotY - pivotY);
+      }
+      pivotX = curPivotX; pivotY = curPivotY;
+
+      cvs.style.transform = `translate(calc(-50% + ${posX}px), calc(-50% + ${posY}px)) scale(${ratio})`;
     } else if (e.touches.length === 1 && isMoving && isFreeMode) {
       posX += (e.touches[0].pageX - lastX); posY += (e.touches[0].pageY - lastY);
       lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
@@ -271,8 +289,8 @@ aside.hidden { transform: translateX(-100%); margin-left: -300px; }
 
   container.addEventListener('touchend', (e) => {
     if (initialDist !== null && e.touches.length < 2) {
-      const dist = Math.hypot(e.changedTouches[0].pageX - (e.touches[0]?.pageX || 0), e.changedTouches[0].pageY - (e.touches[0]?.pageY || 0));
-      sc = Math.min(Math.max(initialScale * (dist / initialDist || 1), 0.2), 5.0);
+      const finalDist = Math.hypot(e.changedTouches[0].pageX - (e.touches[0]?.pageX || 0), e.changedTouches[0].pageY - (e.touches[0]?.pageY || 0));
+      sc = Math.min(Math.max(initialScale * (finalDist / initialDist || 1), 0.2), 5.0);
       initialDist = null; render();
     }
     isMoving = false; if(isFreeMode) keepInBounds();
